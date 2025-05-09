@@ -64,11 +64,37 @@ import {
           focus:outline-none focus:ring-2 focus:ring-zeldaYellow
           transition-all duration-200 backdrop-blur-md`,
 
+        'input-zelda-glow': `
+          relative inline-block
+          w-full max-w-[600px]
+          font-orbitron text-base text-zeldaGold placeholder-zeldaGold/80
+          bg-zeldaGreen/70 border-2 border-zeldaGreen rounded-full // 提高背景不透明度
+          px-5 py-3
+          shadow-md shadow-zeldaGreen/40 // 增强阴影
+          backdrop-blur-lg // 使用更大的模糊效果
+          transition-all duration-200 ease-in-out
+          focus:(outline-none ring-2 ring-zeldaYellow)
+          hover:scale-[1.02]
+          supports-not-(backdrop-filter): bg-zeldaGreen/80`,
+
+        'input-zelda-apple-lite': `
+          appearance-none
+          w-full max-w-600
+          font-orbitron text-base text-#3e6c4e placeholder-zeldaGold
+          bg-#3e6c4e/30 bg-opacity-80
+          border border-#3e6c4e rounded-full
+          p-3 px-5
+          shadow-inner shadow-#3e6c4e/20
+          focus:outline-none focus:ring-2 focus:ring-zeldaYellow
+          transition-all duration-200
+          backdrop-blur-md`,
+
         'select-zelda-apple': `
           appearance-none
           font-orbitron text-base text-zeldaGold
-          bg-zeldaGreen/30 border border-zeldaGreen rounded-full
-          p-3 pr-8 shadow-inner shadow-zeldaGreen/20
+          bg-zeldaGreen border border-zeldaGreen rounded-full
+          p-3 pr-8 shadow-inner shadow-zeldaGreen
+          backdrop-blur-md bg-opacity-80
           focus:outline-none focus:ring-2 focus:ring-zeldaYellow
           transition-all duration-200 backdrop-blur-md`,
 
