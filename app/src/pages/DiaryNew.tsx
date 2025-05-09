@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
 import { useNavigate } from 'react-router-dom'
+import '../styles/ExcalidrawCustom.css'
 
 export default function DiaryNew() {
   const [title, setTitle] = useState('')
@@ -15,24 +16,45 @@ export default function DiaryNew() {
   }
 
   return (
-    <div className="page-sheikah font-orbitron">
-      {/* 标题输入 */}
-      <div className="decorative-top p-4">
+    <div className="page-sheikah font-orbitron relative min-h-[1024px]">
+      <img
+        src="/tears-of-kingdom.png" // 
+        alt="Background"
+        className="absolute top-0 left-0 w-full h-full object-fill z-1 pointer-events-none"
+      />
+      <div className="decorative-top py-4 mx-40% relative z-2 flex items-center gap-4">
         <input
           type="text"
           maxLength={100}
           placeholder="输入日记标题..."
           value={title}
           onChange={e => setTitle(e.target.value)}
-          className="input-sheikah text-xl text-center"
+          className="input-zelda-apple"
         />
+        <select
+          value={mood}
+          onChange={e => setMood(e.target.value as typeof mood)}
+          className="select-zelda-apple"
+        >
+          <option value="happy">开心</option>
+          <option value="calm">平静</option>
+          <option value="sad">难过</option>
+          <option value="excited">兴奋</option>
+          <option value="anxious">焦虑</option>
+        </select>
+
+        <button onClick={handleSave} className="btn-zelda-apple">
+          保存
+        </button>
       </div>
 
       {/* Excalidraw 区域 */}
-      <div className="canvas-sheikah py-6 decorative-border">
+      <div className="w-screen px-0 mx-0 relative z-0 canvas-sheikah decorative-border">
         <Excalidraw
-          theme="dark"
           initialData={{
+            appState:{
+              viewBackgroundColor: "#f8f1d5"
+            },
             elements: Array.from({ length: 100 }, (_, i) => {
               const y = 100 + i * 60 // 60px 间隔
               return {
@@ -64,7 +86,7 @@ export default function DiaryNew() {
       </div>
 
       {/* 情绪 + 保存按钮 */}
-      <div className="decorative-bottom p-4 flex justify-between items-center">
+      {/* <div className="decorative-bottum replative z-2 p-4 flex justify-between items-center">
         <select
           value={mood}
           onChange={e => setMood(e.target.value as typeof mood)}
@@ -80,7 +102,7 @@ export default function DiaryNew() {
         <button onClick={handleSave} className="btn-sheikah text-lg">
           保存
         </button>
-      </div>
+      </div> */}
     </div>
   )
 }

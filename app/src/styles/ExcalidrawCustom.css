@@ -1,0 +1,22 @@
+/* 隐藏左上角菜单按钮（三条横线） */
+.excalidraw .dropdown-menu-button {
+  display: none !important;
+}
+
+/* 隐藏左下角 Zoom 区域（放大缩小、百分比） */
+.excalidraw .zoom-button,
+.excalidraw .reset-zoom-button {
+  display: none !important;
+}
+
+/* 隐藏左下角 Undo / Redo 区域 */
+.excalidraw .undo-redo-buttons {
+  display: none !important;
+}
+.layer-ui__wrapper__top-right label[title="Library"] {
+  display: none !important;
+}
+/* 增加左边距 */
+.Island.App-menu__left {
+  margin-left: 130px !important;  /* 调整此值来增加左边距 */
+}
