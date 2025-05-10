@@ -66,3 +66,14 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+.taginput-zelda {
+  overflow-x: auto;
+  overflow-y: hidden;        /* 禁用垂直滚动 */
+  -ms-overflow-style: none;  /* IE 和 Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+.taginput-zelda::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}

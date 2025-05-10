@@ -1,10 +1,11 @@
+// File: backend/src/routes/diaries.ts
 import { Schema, model, Types } from 'mongoose'
 
 export interface IDiary {
   title: string
   mood: string
   content: string
-  image?: string
+  image?: string[]
   tags: string[]
   user: Types.ObjectId
 }

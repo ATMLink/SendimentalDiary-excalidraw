@@ -10,6 +10,7 @@ import type {User} from './api/auth'
 import { useQuery } from '@tanstack/react-query'
 import DiaryNew from './pages/DiaryNew'
 // import Diaries from './pages/Diaries'
+import { Toaster } from 'react-hot-toast'
 
 function AuthLoader({ children }: { children: React.ReactNode }) {
   const setUser = useUserStore(state => state.setUser)
@@ -46,6 +47,12 @@ const App: React.FC = () => {
 
   return (
       <AuthLoader>
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            duration: 2000,
+          }}
+        />
         <Routes>
           <Route path="/" element={<Login />} />{/* 默认路由到登录页面 */}
           <Route path="/login" element={<Login/>}/>

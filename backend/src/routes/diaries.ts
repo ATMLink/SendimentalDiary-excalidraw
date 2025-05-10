@@ -6,6 +6,8 @@ import multer from 'multer'
 import path from 'path'
 import type {ParamsDictionary} from 'express-serve-static-core'
 import type { ParsedQs} from 'qs'
+import Tag from '../models/Tag'
+import fs from 'fs'
 
 const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-env-var'
@@ -30,41 +32,6 @@ type MulterRequest = Request<ParamsDictionary, any, any, ParsedQs> & {
   files: Express.Multer.File[]
 }
 
-// POST /api/diaries
-// router.post('/', async (req: Request, res: Response) => {
-//   const authHeader = req.headers.authorization
-//   if (!authHeader) {
-//     res.status(401).json({ message: 'No token' })
-//     return  // ← 显式返回 void
-//   }
-
-//   const token = authHeader.split(' ')[1]
-//   try {
-//     const payload = jwt.verify(token, JWT_SECRET) as { userId: string }
-
-//     // multer 已经把文件存在uploads/ 并放在 req.files
-//     const files = req.files as Express.Multer.File[]
-//     // 拼出可外网访问的 URL 数组
-//     const imageUrls = files.map(f => `/uploads/${f.filename}`)
-
-//     const { title, mood, content, image, tags } = req.body
-//     const diary = await Diary.create({
-//       title,
-//       mood,
-//       content,
-//       image: imageUrls,
-//       tags: Array.isArray(tags) ? tags : tags ? [tags] : [],
-//       user: payload.userId,
-//     })
-
-//     res.status(201).json(diary)
-//     return  // ← 显式返回 void
-//   } catch (error) {
-//     console.error(error)
-//     res.status(500).json({ message: '保存失败', error })
-//     return  // ← 显式返回 void
-//   }
-// })
 
 router.post(
   '/',
@@ -97,11 +64,24 @@ router.post(
         return
       }
 
+      const rawTags = Array.isArray(tags) ? tags : tags ? [tags] : []
+
+      // 存储tags(去重，存入数据库)
+      for(const tagName of rawTags){
+        if(tagName.trim()){
+          await Tag.updateOne(
+            {name: tagName},
+            {$setOnInsert: {name: tagName}},
+            {upsert: true}
+          )
+        }
+      }
+
       const diary = await Diary.create({
         title,
         mood,
         content,
-        tags: Array.isArray(tags) ? tags : tags ? [tags] : [],
+        tags: rawTags,
         image: imageUrls,
         user: payload.userId,
       })
@@ -111,6 +91,60 @@ router.post(
     } catch (error) {
       console.error(error)
       res.status(500).json({ message: '保存失败', error })
+      return
+    }
+  }
+)
+
+router.get('/tags', async (req: Request, res: Response) => {
+  try{
+    const tags = await Tag.find({}, 'name').sort({name: 1})
+    res.json(tags.map(tag => tag.name))
+  }catch(error){
+    console.error(error)
+    res.status(500).json({message: '获取标签失败'})
+  }
+})
+
+router.patch(
+  '/:id',
+  upload.single('images'),
+  async (req: Request<{ id: string }>, res: Response) => {
+    const authHeader = req.headers.authorization
+    if (!authHeader) {
+      res.status(401).json({ message: 'No token' })
+      return
+    }
+
+    try {
+      const token = authHeader.split(' ')[1]
+      jwt.verify(token, JWT_SECRET)  // 仅校验，无需取 payload
+
+      const diary = await Diary.findById(req.params.id)
+      if (!diary) {
+        res.status(404).json({ message: 'Not found' })
+        return
+      }
+
+      // 如果上传了新图，就删掉旧图
+      if (req.file) {
+        (diary.image || []).forEach((url: string) => {
+          const filePath = path.join(__dirname, '../../uploads', path.basename(url))
+          fs.unlink(filePath, err => { if (err) console.error(err) })
+        })
+        diary.image = [`/uploads/${req.file.filename}`]
+      }
+
+      const { title, mood, tags } = req.body
+      if (title) diary.title = title
+      if (mood) diary.mood = mood
+      diary.tags = Array.isArray(tags) ? tags : tags ? [tags] : []
+
+      await diary.save()
+      res.json(diary)
+    } catch (err) {
+      console.error(err)
+      res.status(500).json({ message: '更新失败', error: err })
       return
     }
   }

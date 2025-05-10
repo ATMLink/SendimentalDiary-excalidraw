@@ -9,6 +9,11 @@ import {
       presetAttributify(),
       presetIcons()
     ],
+    safelist: [
+      'toast-zelda',
+      'toast-zelda-success',
+      'toast-zelda-error',
+    ],
     theme: {
       colors: {
         zeldaGold: '#f8f1d5',
@@ -99,6 +104,62 @@ import {
           transition-all duration-200 backdrop-blur-md`,
 
 
+        // tag input
+        'taginput-zelda': `
+          flex items-center gap-2
+          px-4 py-2
+          bg-#3e6c4e/30 bg-opacity-80
+          border border-#3e6c4e rounded-full
+          shadow-inner shadow-#3e6c4e/20
+          text-zeldaGold font-orbitron text-sm
+          max-w-600 w-full
+          overflow-x-auto
+          h-10
+          focus-within:ring-2 focus-within:ring-zeldaYellow
+          transition-all duration-200
+          backdrop-blur-md
+          overflow-y-hidden
+        `,
+
+        'taginput-tag': `
+          inline-flex items-center gap-1
+          font-orbitron text-sm
+          px-3 py-1
+          rounded-full border border-zeldaGreen
+          bg-zeldaYellow text-zeldaGreen
+          transition-all duration-200 ease-in-out
+          flex-shrink-0
+        `,
+
+        'taginput-input': `
+          bg-transparent outline-none border-none
+          text-zeldaGold placeholder-zeldaGold/60
+          font-orbitron text-sm
+          min-w-[60px] w-auto px-2 py-1
+          flex-shrink-0
+        `,
+
+        'taginput-tag button': `
+          bg-transparent text-red-300 hover:text-red-500
+          outline-none border-none
+          font-bold
+          hover:bg-transparent
+          rounded-full w-5 h-5 flex items-center justify-center
+        `,
+
+        // toast styles
+        'toast-zelda': `
+          bg-zeldaGreen/70 text-zeldaGold font-orbitron text-sm px-4 py-2
+          rounded-sheikah shadow-md shadow-zeldaGreen/40 backdrop-blur-md
+          border border-zeldaYellow/50 transition-all duration-200 hover:scale-105`,
+        'toast-zelda-success': `
+          bg-zeldaYellow/80 text-zeldaGreen font-orbitron text-sm px-4 py-2
+          rounded-sheikah shadow-md shadow-zeldaYellow/40 backdrop-blur-md
+          border border-zeldaGreen/50 transition-all duration-200 hover:scale-105`,
+        'toast-zelda-error': `
+          bg-pink-500/80 text-zeldaGold font-orbitron text-sm px-4 py-2
+          rounded-sheikah shadow-md shadow-pink-500/40 backdrop-blur-md
+          border border-zeldaGold/50 transition-all duration-200 hover:scale-105`,
 
       // sheikah slate style
       'btn-sheikah': 'bg-sheikah-blue text-black font-bold px-4 py-2 rounded-lg hover:bg-cyan-300 transition',

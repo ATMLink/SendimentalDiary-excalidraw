@@ -1,6 +1,6 @@
 // // app/src/pages/DiaryNew.tsx
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
 // import { useNavigate } from 'react-router-dom'
 import '../styles/ExcalidrawCustom.css'
@@ -24,14 +24,51 @@ import MoodSelector from '../components/MoodSelector'
 export default function DiaryNew() {
   const [title, setTitle] = useState('')
   const [mood, setMood] = useState<Mood>('happy' as Mood)
-  // const [tags, setTags] = useState<string[]>([])
+  const [tags, setTags] = useState<string[]>([])
+  const [tagInput, setTagInput] = useState<string>("")
+  const [diaryId, setDiaryId] = useState<string | null>(null)
   // const navigate = useNavigate()
   const excalidrawRef = useRef<ExcalidrawImperativeAPI>(null)
-  const { saveDiary } = useDiarySave()
+  const { saveDiary } = useDiarySave(diaryId, setDiaryId)
 
   const [previewImage, setPreviewImage] = useState<string | null>(null)
 
-  
+  const dirtyRef = useRef(false)
+  const markDirty = () => {
+    dirtyRef.current = true
+  }
+
+  useEffect(() => {
+    // 30 秒定时自动保存
+    const id = setInterval(async () => {
+      if (!dirtyRef.current) return
+      // 调用跟点击保存同样的逻辑
+      if (!title.trim()) return
+      const blob = await generateBlob()
+      if (!blob) return
+      const form = new FormData()
+      form.append('title', title)
+      form.append('mood', mood)
+      form.append('content', '')
+      tags.forEach(t => form.append('tags', t))
+      form.append('images', blob, 'snapshot.png')
+      saveDiary(form)
+      dirtyRef.current = false // 重置改动标记
+    }, 30_000)
+
+    return () => clearInterval(id)  // 卸载时清理
+  }, [title, mood, tags, saveDiary]) 
+
+  // 在任何改变 title / mood / tags / 画布操作 后都调用 markDirty()
+  const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value)
+    markDirty()
+  }
+  const onMoodChange = (m: Mood) => {
+    setMood(m)
+    markDirty()
+  }
+
   const generatePreview = async (): Promise<string | null> => {
     if (!excalidrawRef.current) return null
 
@@ -84,12 +121,23 @@ export default function DiaryNew() {
     }
   }
 
-  // const handleSave = async () => {
-  //   const dataUrl = await generatePreview()
-  //   if(!dataUrl) return;
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if((e.key === "Enter" || e.key === ",") && tagInput.trim()){
+      e.preventDefault()
+      const newTag = tagInput.trim()
+      if(!tags.includes(newTag)){
+        setTags([...tags, newTag])
+        markDirty()
+      }
+      setTagInput("")
+    }
+  }
 
-  //   saveDiary({ title, mood, image: dataUrl, content: '', tags:[] })
-  // }
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove))
+    markDirty()
+  }
+
   const handleSave = async () => {
     if (!title.trim()) {
       alert('标题不能为空！')
@@ -107,7 +155,7 @@ export default function DiaryNew() {
     form.append('mood', mood)
     form.append('content', '')        // 如果你有文本内容，也 append
     // 如果有标签，多次 append
-    // tags.forEach(t => form.append('tags', t))
+    tags.forEach(tag => form.append('tags', tag))
 
     // key 要和后端 upload.array('images') 里的一致
     form.append('images', blob, 'snapshot.png')
@@ -193,6 +241,7 @@ export default function DiaryNew() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         elements: [...api.getSceneElements(), imageElement as any],
       });
+      markDirty()
     };
   };
   reader.readAsDataURL(file);
@@ -209,13 +258,36 @@ export default function DiaryNew() {
         className="absolute top-0 left-0 w-full h-full object-fill z-10 pointer-events-none"
       />
 
-      <div className="decorative-top py-6 mx-40% relative z-11 flex items-center gap-4">
+      <div className="decorative-top py-5 mx-40% relative z-11 flex items-center gap-4">
+        
+        <div className="taginput-zelda">
+          {tags.map((tag) => (
+            <span key={tag} className="taginput-tag flex items-center gap-1">
+              {tag}
+              <button
+                onClick={() => removeTag(tag)}
+                className="text-red-300 hover:text-red-500 font-bold bg-transparent"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleTagKeyDown}
+            placeholder="输入标签..."
+            className="taginput-input"
+          />
+        </div>
+        
         <input
           type="text"
            maxLength={100}
            placeholder="输入日记标题..."
            value={title}
-           onChange={e => setTitle(e.target.value)}
+           onChange={onTitleChange}
            className="input-zelda-apple-lite"
          />
       </div>
@@ -233,6 +305,7 @@ export default function DiaryNew() {
       <div className="w-screen h-screen relative z-5">
         <Excalidraw
           ref={excalidrawRef}
+          onChange={() => markDirty()}
           viewModeEnabled={false}
           zenModeEnabled={false}
           UIOptions={{
@@ -275,18 +348,8 @@ export default function DiaryNew() {
 
           {/* 工具栏右侧：情绪选择 + 保存按钮 */}
           <div className="absolute top-2 right-20% flex gap-2 z-4">
-            {/* <select
-              value={mood}
-              onChange={e => setMood(e.target.value as typeof mood)}
-              className="select-zelda-apple"
-            >
-              <option value="happy">开心</option>
-              <option value="calm">平静</option>
-              <option value="sad">难过</option>
-              <option value="excited">兴奋</option>
-              <option value="anxious">焦虑</option>
-            </select> */}
-            <MoodSelector mood={mood} onChange = {setMood}/>
+
+            <MoodSelector mood={mood} onChange = {onMoodChange}/>
             <button
               onClick={() => document.getElementById('image-upload')?.click()}
               className="btn-zelda-apple"
