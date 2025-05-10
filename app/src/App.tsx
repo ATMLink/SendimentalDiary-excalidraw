@@ -9,6 +9,7 @@ import { fetchMeApi} from './api/auth'
 import type {User} from './api/auth'
 import { useQuery } from '@tanstack/react-query'
 import DiaryNew from './pages/DiaryNew'
+// import Diaries from './pages/Diaries'
 
 function AuthLoader({ children }: { children: React.ReactNode }) {
   const setUser = useUserStore(state => state.setUser)
@@ -50,6 +51,7 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login/>}/>
           <Route path="/home" element={<HomePage />} />
           <Route path="/diary/new" element={<DiaryNew />}/>
+          {/* <Route path="/diaries" element={<Diaries/>}/> */}
         </Routes>
       </AuthLoader>
   )

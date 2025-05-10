@@ -80,7 +80,7 @@ import {
         'input-zelda-apple-lite': `
           appearance-none
           w-full max-w-600
-          font-orbitron text-base text-#3e6c4e placeholder-zeldaGold
+          font-orbitron text-base text-zeldaGold placeholder-zeldaGold
           bg-#3e6c4e/30 bg-opacity-80
           border border-#3e6c4e rounded-full
           p-3 px-5

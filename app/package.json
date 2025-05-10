@@ -14,6 +14,7 @@
     "@excalidraw/excalidraw": "^0.14.2",
     "@tanstack/react-query": "^5.75.5",
     "axios": "^1.9.0",
+    "html-to-image": "^1.11.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^7.5.3",

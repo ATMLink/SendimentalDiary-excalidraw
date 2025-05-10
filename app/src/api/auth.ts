@@ -1,4 +1,4 @@
-// src/api/auth.ts
+// app/src/api/auth.ts
 import api from '../lib/axios'
 
 export interface User {

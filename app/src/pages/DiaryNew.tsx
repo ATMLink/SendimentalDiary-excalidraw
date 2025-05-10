@@ -2,27 +2,117 @@
 
 import { useState, useRef } from 'react'
 import { Excalidraw } from '@excalidraw/excalidraw'
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom'
 import '../styles/ExcalidrawCustom.css'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types/types'
 // import { FileId, DataURL, BinaryFileData } from "@excalidraw/excalidraw";
 import type { BinaryFileData, DataURL } from '@excalidraw/excalidraw/types/types'
+// import type { BinaryFileData } from '@excalidraw/excalidraw/types/types'
 // import {convertToExcalidrawElements} from '@excalidraw/excalidraw/types/element/types'
 // import { convertToExcalidrawElements } from '@excalidraw/excalidraw/types/element/types'
 // import {convertToExcalidrawElements} from '@excalidraw/excalidraw/types/element/types'
 // import type { convertToExcalidrawElements } from '@excalidraw/excalidraw/types/element/types'
 import type { FillStyle, StrokeStyle } from '@excalidraw/excalidraw/types/element/types'
+import { exportToBlob } from '@excalidraw/excalidraw'
+import {useDiarySave} from '../hooks/useSaveDiary'
+import type {Mood} from '../types/diary'
+import {blobToDataURL} from '../utils/image'
+import MoodSelector from '../components/MoodSelector'
+// import { data } from 'react-router-dom'
 
 
 export default function DiaryNew() {
   const [title, setTitle] = useState('')
-  const [mood, setMood] = useState<'happy' | 'calm' | 'sad' | 'excited' | 'anxious'>('happy')
-  const navigate = useNavigate()
+  const [mood, setMood] = useState<Mood>('happy' as Mood)
+  // const [tags, setTags] = useState<string[]>([])
+  // const navigate = useNavigate()
   const excalidrawRef = useRef<ExcalidrawImperativeAPI>(null)
+  const { saveDiary } = useDiarySave()
 
-  const handleSave = () => {
-    console.log({ title, mood })
-    navigate('/diary')
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
+  
+  const generatePreview = async (): Promise<string | null> => {
+    if (!excalidrawRef.current) return null
+
+    try {
+      const elements = excalidrawRef.current.getSceneElements()
+      const files = excalidrawRef.current.getFiles()
+      if (!elements.length) return null
+
+      const blob = await exportToBlob({
+        elements,
+        files,
+        mimeType: 'image/png',
+        quality: 0.8,
+        appState: {
+          exportBackground: true,
+          viewBackgroundColor: '#f8f1d5',
+        },
+      })
+
+      const dataUrl = await blobToDataURL(blob)
+      setPreviewImage(dataUrl)
+      return dataUrl
+    } catch (error) {
+      console.error('截图生成失败:', error)
+      return null
+    }
+  }
+
+  const generateBlob = async (): Promise<Blob | null> => {
+    const api = excalidrawRef.current
+    if (!api) return null
+    const elements = api.getSceneElements()
+    const files = api.getFiles()
+    if (!elements.length) return null
+
+    try {
+      return await exportToBlob({
+        elements,
+        files,
+        mimeType: 'image/png',
+        quality: 0.8,
+        appState: {
+          exportBackground: true,
+          viewBackgroundColor: '#f8f1d5',
+        },
+      })
+    } catch (e) {
+      console.error('导出 Blob 失败', e)
+      return null
+    }
+  }
+
+  // const handleSave = async () => {
+  //   const dataUrl = await generatePreview()
+  //   if(!dataUrl) return;
+
+  //   saveDiary({ title, mood, image: dataUrl, content: '', tags:[] })
+  // }
+  const handleSave = async () => {
+    if (!title.trim()) {
+      alert('标题不能为空！')
+      return
+    }
+    const blob = await generateBlob()
+    if (!blob) {
+      alert('没有内容可保存')
+      return
+    }
+
+    // 构造 FormData
+    const form = new FormData()
+    form.append('title', title)
+    form.append('mood', mood)
+    form.append('content', '')        // 如果你有文本内容，也 append
+    // 如果有标签，多次 append
+    // tags.forEach(t => form.append('tags', t))
+
+    // key 要和后端 upload.array('images') 里的一致
+    form.append('images', blob, 'snapshot.png')
+
+    saveDiary(form)
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,7 +197,9 @@ export default function DiaryNew() {
   };
   reader.readAsDataURL(file);
   e.target.value = '';
+  
 };
+  
 
   return (
     <div className="page-sheikah font-orbitron relative min-h-[1024px]">
@@ -150,9 +242,9 @@ export default function DiaryNew() {
           }}
           initialData={{
             appState: {
-              viewBackgroundColor: "#f8f1d5"
+              viewBackgroundColor: "#f8f1d5",
             },
-            elements: Array.from({ length: 100 }, (_, i) => {
+            elements: Array.from({ length: 50 }, (_, i) => {
               const y = 100 + i * 60
               return {
                 id: `line-${i}`,
@@ -161,7 +253,7 @@ export default function DiaryNew() {
                 y,
                 width: 5000,
                 height: 0,
-                points: [[0, 0], [5000, 0]],
+                points: [[0, 0], [2500, 0]],
                 angle: 0,
                 strokeColor: "#3e6c4e",
                 backgroundColor: "transparent",
@@ -183,7 +275,7 @@ export default function DiaryNew() {
 
           {/* 工具栏右侧：情绪选择 + 保存按钮 */}
           <div className="absolute top-2 right-20% flex gap-2 z-4">
-            <select
+            {/* <select
               value={mood}
               onChange={e => setMood(e.target.value as typeof mood)}
               className="select-zelda-apple"
@@ -193,19 +285,37 @@ export default function DiaryNew() {
               <option value="sad">难过</option>
               <option value="excited">兴奋</option>
               <option value="anxious">焦虑</option>
-            </select>
+            </select> */}
+            <MoodSelector mood={mood} onChange = {setMood}/>
             <button
               onClick={() => document.getElementById('image-upload')?.click()}
               className="btn-zelda-apple"
             >
               插入图片
             </button>
+            <button onClick={generatePreview} className="btn-zelda-apple">
+              预览
+            </button>
+            {/* <button onClick={handleSave} className="btn-zelda-apple"> */}
             <button onClick={handleSave} className="btn-zelda-apple">
               保存
             </button>
+            
           </div>
         </Excalidraw>
       </div>
+      {/* 预览图展示 */}
+            {previewImage && (
+              <div className="absolute top-10 left-10 w-80% max-w-800px bg-white border-2 border-blue-500 rounded-xl overflow-hidden shadow-lg z-100 p-4">
+                <img src={previewImage} alt="预览图" className="w-full h-auto object-contain" />
+                <button
+                  onClick={() => setPreviewImage(null)}
+                  className="mt-2 p-2 bg-red-500 text-white rounded"
+                >
+                  关闭预览
+                </button>
+              </div>
+            )}
     </div>
   )
 }
