@@ -20,3 +20,11 @@ export function updateDiary(id: string, formData: FormData){
     },
   })
 }
+
+export async function fetchDiaryById(id: string) {
+  const token = localStorage.getItem('token') || ''
+  const res = await fetch(`/api/diaries/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  return res.json()
+}

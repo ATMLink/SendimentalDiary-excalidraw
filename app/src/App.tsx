@@ -8,7 +8,7 @@ import HomePage from './pages/Home'
 import { fetchMeApi} from './api/auth'
 import type {User} from './api/auth'
 import { useQuery } from '@tanstack/react-query'
-import DiaryNew from './pages/DiaryNew'
+import DiaryEdit from './pages/DiaryEditor'
 // import Diaries from './pages/Diaries'
 import { Toaster } from 'react-hot-toast'
 
@@ -57,7 +57,8 @@ const App: React.FC = () => {
           <Route path="/" element={<Login />} />{/* 默认路由到登录页面 */}
           <Route path="/login" element={<Login/>}/>
           <Route path="/home" element={<HomePage />} />
-          <Route path="/diary/new" element={<DiaryNew />}/>
+          <Route path="/diary/new" element={<DiaryEdit />}/>
+          <Route path="/diary/:id/edit" element={<DiaryEdit/>}/>
           {/* <Route path="/diaries" element={<Diaries/>}/> */}
         </Routes>
       </AuthLoader>

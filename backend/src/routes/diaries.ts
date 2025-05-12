@@ -96,6 +96,20 @@ router.post(
   }
 )
 
+router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
+  try {
+    const diary = await Diary.findById(req.params.id)
+    if (!diary) {
+      res.status(404).json({ message: 'Diary not found' })
+      return
+    }
+    res.json(diary)
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ message: '获取日记失败', error: err })
+  }
+})
+
 router.get('/tags', async (req: Request, res: Response) => {
   try{
     const tags = await Tag.find({}, 'name').sort({name: 1})
