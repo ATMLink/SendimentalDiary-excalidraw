@@ -20,3 +20,8 @@
 .Island.App-menu__left {
   margin-left: 130px !important;  /* 调整此值来增加左边距 */
 }
+/* 隐藏 UserList（协作用户列表） */
+.excalidraw .UserList,
+.excalidraw .UserList_mobile {
+  display: none !important;
+}

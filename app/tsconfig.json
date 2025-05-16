@@ -1,3 +1,4 @@
+// tsconfig.json
 {
   "files": [],
   "references": [
@@ -5,6 +6,12 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "types": ["node"]
-  }
+    "types": ["node"],
+    "typeRoots": [
+      "./node_modules/@types", "./src/types"
+    ]
+  },
+  "include": [
+    "src/types",
+  ]
 }

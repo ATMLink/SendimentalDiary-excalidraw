@@ -1,6 +1,6 @@
-// // app/src/pages/DiaryEditor.tsx
+// app/src/pages/DiaryEditor.tsx
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import {Excalidraw} from '@excalidraw/excalidraw'
 // import { useNavigate } from 'react-router-dom'
 import '../styles/ExcalidrawCustom.css'
@@ -17,8 +17,13 @@ import { fetchDiaryById } from '../api/diaries'
 import type {AppState} from '@excalidraw/excalidraw/types/types'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types'
 import { ErrorBoundary } from '../components/common/ErrorBoundary'
+import useUserStore from '../store/user'
+import type { Collaborator } from '@excalidraw/excalidraw/types/types'
+import { toast } from 'react-hot-toast'
 
 export default function DiaryEdit() {
+
+  const { user } = useUserStore()
 
   const {id: paramId} = useParams<{id: string}>()
   const navigate = useNavigate()
@@ -38,6 +43,24 @@ export default function DiaryEdit() {
   const markDirty = () => {
     dirtyRef.current = true
   }
+
+  const collaborators = useMemo(
+    () =>
+      new Map<string, Collaborator>(
+        user._id
+          ? [
+              [
+                user._id,
+                {
+                  username: user.username || 'Anonymous',
+                  id: user._id,
+                },
+              ],
+            ]
+          : []
+      ),
+    [user._id, user.username]
+  );
 
   // 加载日记
   useEffect(() => {
@@ -70,9 +93,25 @@ export default function DiaryEdit() {
 
       // 恢复元素与状态
       const elements = Array.isArray(parsed.elements) ? parsed.elements : [];
-      const appState = parsed.appState
-        ? (parsed.appState as AppState)
-        : ({} as AppState);
+      // const appState = parsed.appState
+      //   ? (parsed.appState as AppState)
+      //   : ({} as AppState);
+      // 合并 appState，确保 collaborators 存在
+      // const appState = parsed.appState
+      //   ? { ...parsed.appState, collaborators, viewBackgroundColor: '#f8f1d5' }
+      //   : { collaborators, viewBackgroundColor: '#f8f1d5' };
+      const appState: Partial<AppState> = parsed.appState
+            ? {
+                ...parsed.appState,
+                collaborators,
+                viewBackgroundColor: '#f8f1d5',
+                contextMenu: null, // ADDED: 确保 contextMenu 不为 undefined
+              }
+            : {
+                collaborators,
+                viewBackgroundColor: '#f8f1d5',
+                contextMenu: null, // ADDED: 确保 contextMenu 不为 undefined
+              };
 
       // CHANGED: 转成 BinaryFileData，使用 url 作为 id 和 dataURL，以满足类型
       const filesArray: BinaryFileData[] = Array.isArray(parsed.files)
@@ -86,6 +125,7 @@ export default function DiaryEdit() {
 
       // 注入文件
       if (filesArray.length && excalidrawRef.current) {
+        console.log('Adding files to Excalidraw:', filesArray); // ADDED: 调试日志
         excalidrawRef.current.addFiles(filesArray);
       }
 
@@ -99,79 +139,104 @@ export default function DiaryEdit() {
       navigate('/diaries');
     }
   })();
-}, [paramId, navigate]);
+}, [paramId, navigate, collaborators]);
 
-  // useEffect(() => {
-  //   // 30 秒定时自动保存
-  //   const id = setInterval(async () => {
-  //     if (!dirtyRef.current) return
-  //     // 调用跟点击保存同样的逻辑
-  //     if (!title.trim()) return
-  //     const blob = await generateBlob()
-  //     if (!blob) return
-  //     const form = new FormData()
-  //     form.append('title', title)
-  //     form.append('mood', mood)
-  //     form.append('content', '')
-  //     tags.forEach(t => form.append('tags', t))
-  //     form.append('images', blob, 'snapshot.png')
-  //     saveDiary(form)
-  //     dirtyRef.current = false // 重置改动标记
-  //   }, 30_000)
 
-  //   return () => clearInterval(id)  // 卸载时清理
-  // }, [title, mood, tags, saveDiary]) 
+  
+
+  // MODIFIED: 更新 buildFormData，区分 images（截图）和 contentImages（内容图片）
+  const buildFormData = async () => {
+    const blob = await generateBlob();
+    if (!blob) return null;
+
+    const scene = excalidrawRef.current?.getSceneElements();
+    const appState = excalidrawRef.current?.getAppState();
+    const files = excalidrawRef.current?.getFiles() || {};
+
+    // ADDED: 日志记录 FormData 内容，方便调试
+    console.log('Building FormData:', {
+      sceneLength: scene?.length,
+      appState,
+      files,
+      contentSize: new TextEncoder().encode(
+        JSON.stringify({
+          elements: scene,
+          appState: { ...appState, collaborators, contextMenu: null },
+          files,
+        })
+      ).length,
+    });
+
+    // ADDED: 清理 files，仅保留元数据（id、mimeType、created）
+    const cleanedFiles = files
+      ? Object.fromEntries(
+          Object.entries(files).map(([key, file]) => [
+            key,
+            {
+              id: file.id,
+              mimeType: file.mimeType,
+              created: file.created,
+            },
+          ])
+        )
+      : {};
+
+    const form = new FormData();
+    form.append('title', title);
+    form.append('mood', mood);
+    // MODIFIED: content 包含清理后的 files，实际图片通过 contentImages 上传
+    form.append(
+      'content',
+      JSON.stringify({
+        elements: scene,
+        appState: { ...appState, collaborators, contextMenu: null },
+        files: cleanedFiles,
+      })
+    );
+    tags.forEach(t => form.append('tags', t));
+    // ADDED: 添加画布截图
+    form.append('images', blob, 'snapshot.png');
+
+    // ADDED: 添加内容图片到 contentImages
+    if (scene) {
+      scene.forEach(element => {
+        if (element.type === 'image' && element.customData?.originalFile) {
+          const file = element.customData.originalFile as File;
+          form.append('contentImages', file, `content-image-${element.fileId}.png`);
+        }
+      });
+    }
+
+    return form;
+  };
 
   // 自动保存
   useEffect(() => {
     const id = setInterval(async () => {
-      if (!dirtyRef.current) return;
-      if (!title.trim()) return;
-      const blob = await generateBlob();
-      if (!blob) return;
-
-      const scene = excalidrawRef.current?.getSceneElements();
-      const appState = excalidrawRef.current?.getAppState();
-      const files = excalidrawRef.current?.getFiles() || {};
-
-      // 清理 files 中的 dataURL
-      const cleanedFiles = files
-        ? Object.fromEntries(
-            Object.entries(files).map(([key, file]) => [
-              key,
-              {
-                id: file.id,
-                mimeType: file.mimeType,
-                created: file.created,
-              } as BinaryFileData,
-            ])
-          )
-        : {};
-
-      const form = new FormData();
-      form.append('title', title);
-      form.append('mood', mood);
-      form.append('content', JSON.stringify({ elements: scene, appState, files: cleanedFiles }));
-      tags.forEach(t => form.append('tags', t));
-      form.append('images', blob, 'snapshot.png');
-
-      // 上传 content 中的图片
-      if (scene) {
-        scene.forEach(element => {
-          if (element.type === 'image' && element.customData?.originalFile) {
-            const file = element.customData.originalFile as File;
-            form.append('images', file, `content-image-${element.fileId}.png`);
-          }
-        });
+      if (!dirtyRef.current || !title.trim()) {
+        console.log('Auto-save skipped: not dirty or no title');
+        return;
       }
 
-      console.log('Auto-saving content size (bytes):', new TextEncoder().encode(JSON.stringify({ elements: scene, appState, files: cleanedFiles })).length);
-      saveDiary(form);
-      dirtyRef.current = false;
+      const form = await buildFormData();
+      if (!form) {
+        console.log('Auto-save skipped: no FormData');
+        return;
+      }
+
+      console.log('Auto-saving with diaryId:', diaryId);
+      try {
+        const response = await saveDiary(form);
+        console.log('Auto-save response:', response);
+        dirtyRef.current = false;
+      } catch (err) {
+        console.error('Auto-save failed:', err);
+        toast.error('自动保存失败');
+      }
     }, 30_000);
 
     return () => clearInterval(id);
-  }, [title, mood, tags, saveDiary]);
+  }, [title, mood, tags, saveDiary, collaborators, diaryId]);
 
   // 在任何改变 title / mood / tags / 画布操作 后都调用 markDirty()
   const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -252,47 +317,91 @@ export default function DiaryEdit() {
     markDirty()
   }
 
+  // const handleSave = async () => {
+  //   if (!title.trim()) {
+  //     alert('标题不能为空！')
+  //     return
+  //   }
+  //   const blob = await generateBlob()
+  //   if (!blob) {
+  //     alert('没有内容可保存')
+  //     return
+  //   }
+
+  //   const scene = excalidrawRef.current?.getSceneElements()
+  //   const appState = excalidrawRef.current?.getAppState()
+  //   const files = excalidrawRef.current?.getFiles()
+
+  //   console.log('Manual save data:', { sceneLength: scene?.length, appState, files });
+
+  //   // 清理 files 中的 dataURL
+  //     const cleanedFiles = files
+  //       ? Object.fromEntries(
+  //           Object.entries(files).map(([key, file]) => [
+  //             key,
+  //             {
+  //               id: file.id,
+  //               mimeType: file.mimeType,
+  //               created: file.created,
+  //             } as BinaryFileData,
+  //           ])
+  //         )
+  //       : {};
+  //   // 构造 FormData
+  //   const form = new FormData()
+  //   form.append('title', title)
+  //   form.append('mood', mood)
+  //   // form.append('content', JSON.stringify({elements: scene, appState, files: cleanedFiles}))        // 如果你有文本内容，也 append
+  //   form.append(
+  //     'content',
+  //     JSON.stringify({
+  //       elements: scene,
+  //       appState: { ...appState, collaborators, contextMenu: null }, // ADDED: 统一 content 构造
+  //       files: cleanedFiles,
+  //     })
+  //   );
+    
+  //   // 如果有标签，多次 append
+  //   tags.forEach(tag => form.append('tags', tag))
+
+  //   // key 要和后端 upload.array('images') 里的一致
+  //   form.append('images', blob, 'snapshot.png')
+
+  //   if(scene){
+  //     scene.forEach(element => {
+  //       if(element.type === 'image' && element.customData?.originalFile){
+  //         const file = element.customData.originalFile as File
+  //         form.append('images', file, `content-image-${element.fileId}.png`)
+  //       }
+  //     })
+  //   }
+
+  //   await saveDiary(form)
+  // }
+
+  // 手动保存
   const handleSave = async () => {
     if (!title.trim()) {
-      alert('标题不能为空！')
-      return
-    }
-    const blob = await generateBlob()
-    if (!blob) {
-      alert('没有内容可保存')
-      return
+      toast.error('标题不能为空！');
+      return;
     }
 
-    const scene = excalidrawRef.current?.getSceneElements()
-    const appState = excalidrawRef.current?.getAppState()
-    const files = excalidrawRef.current?.getFiles()
+    const form = await buildFormData();
+    if (!form) {
+      toast.error('没有内容可保存');
+      return;
+    }
 
-    // 清理 files 中的 dataURL
-      const cleanedFiles = files
-        ? Object.fromEntries(
-            Object.entries(files).map(([key, file]) => [
-              key,
-              {
-                id: file.id,
-                mimeType: file.mimeType,
-                created: file.created,
-              } as BinaryFileData,
-            ])
-          )
-        : {};
-    // 构造 FormData
-    const form = new FormData()
-    form.append('title', title)
-    form.append('mood', mood)
-    form.append('content', JSON.stringify({elements: scene, appState, files: cleanedFiles}))        // 如果你有文本内容，也 append
-    // 如果有标签，多次 append
-    tags.forEach(tag => form.append('tags', tag))
-
-    // key 要和后端 upload.array('images') 里的一致
-    form.append('images', blob, 'snapshot.png')
-
-    saveDiary(form)
-  }
+    console.log('Manual saving with diaryId:', diaryId);
+    try {
+      const response = await saveDiary(form);
+      console.log('Manual save response:', response);
+      toast.success('手动保存成功');
+    } catch (err) {
+      console.error('Manual save failed:', err);
+      toast.error('手动保存失败: ' + (err instanceof Error ? err.message : '未知错误'));
+    }
+  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
   const file = e.target.files?.[0];
@@ -363,10 +472,11 @@ export default function DiaryEdit() {
         roundness: null,
         boundElements: [],
         link: null,
-        customData: {},
+        customData: { originalFile: file },
         scale: [1, 1],
       };
 
+      console.log('Updating scene with image element:', imageElement); // ADDED: 调试日志
 
       api.updateScene({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -437,8 +547,8 @@ export default function DiaryEdit() {
         <div className="w-screen h-screen relative z-5">
           <Excalidraw
             ref={excalidrawRef}
-            onChange={(elements, appState) => {
-              console.log('Excalidraw collaborators:', appState.collaborators);
+            onChange={() => {
+              // console.log('Excalidraw collaborators:', appState.collaborators);
               markDirty();
             }}
             viewModeEnabled={false}
@@ -447,11 +557,14 @@ export default function DiaryEdit() {
               canvasActions: {
                 loadScene: true,
               },
+              // collaboration: { enable: false } as any,
             }}
             initialData={{
-              collaborators: new Map(),
+              collaborators,
               appState: {
                 viewBackgroundColor: "#f8f1d5",
+                collaborators,
+                contextMenu: null,
               },
               elements: Array.from({ length: 50 }, (_, i) => {
                 const y = 100 + i * 60

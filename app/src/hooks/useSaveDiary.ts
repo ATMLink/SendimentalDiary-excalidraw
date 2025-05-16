@@ -58,7 +58,7 @@ export function useDiarySave(
       updateDiary(id, form),
     onSuccess: () => {
       // console.log('自动保存成功')
-      toast.success('自动保存成功')
+      toast.success('日记保存成功')
     },
     onError: handleError,
   })
@@ -70,7 +70,8 @@ export function useDiarySave(
     } else if (error instanceof Error) {
       msg = error.message
     }
-    alert(msg)
+    // alert(msg)
+    toast.error(msg)
     console.error(error)
   }
 
