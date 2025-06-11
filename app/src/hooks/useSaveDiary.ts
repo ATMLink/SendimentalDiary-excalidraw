@@ -1,39 +1,17 @@
 // app/src/hooks/useSaveDiary.ts
 
 // import { useNavigate } from 'react-router-dom'
-// import type { DiaryData } from '../types/diary'
 import {postDiary, updateDiary} from '../api/diaries'
 import {useMutation} from '@tanstack/react-query'
 import { isAxiosError } from 'axios'
 import {toast} from 'react-hot-toast'
 
-
-// export function useDiarySave() {
-//   const navigate = useNavigate()
-
-//   const mutation = useMutation({
-//     mutationFn: (formData: FormData) => postDiary(formData),
-//     onSuccess: () => {
-//       alert('日记保存成功！')
-//       navigate('/diaries')
-//     },
-//     onError: (error) => {
-//       let msg = '保存失败，请重试'
-//       if (isAxiosError(error)) {
-//         msg = error.response?.data?.message || error.message
-//       } else if (error instanceof Error) {
-//         msg = error.message
-//       }
-//       alert(msg)
-//       console.error(error)
-//     },
-//   })
-
-//   return {
-//     saveDiary: mutation.mutate,
-//     isSaving: mutation.isPending,
-//   }
-// }
+/**
+ * 自定义 Hook 用于保存日记
+ * @param diaryId - 日记 ID，如果为 null 则表示创建新日记
+ * @param setDiaryId - 设置日记 ID 的函数
+ * @returns { saveDiary, isSaving } - 保存日记的函数和保存状态
+ */
 
 export function useDiarySave(
   diaryId: string | null,
@@ -77,9 +55,9 @@ export function useDiarySave(
 
   const saveDiary = (form: FormData) => {
     if (diaryId) {
-      updateMutation.mutate({ id: diaryId, form })
+      return updateMutation.mutateAsync({ id: diaryId, form })
     } else {
-      createMutation.mutate(form)
+      return createMutation.mutateAsync(form)
     }
   }
 
