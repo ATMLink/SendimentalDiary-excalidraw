@@ -10,6 +10,8 @@ import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
 // import ReactDOM from 'react-dom/client'
 
+// window.EXCALIDRAW_ASSET_PATH = "/excalidraw-assets/";
+
 const queryClient = new QueryClient
 
 
