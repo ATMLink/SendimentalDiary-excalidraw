@@ -356,27 +356,42 @@ export default function DiaryEdit() {
   };
 
   // 手动保存按钮事件
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!title.trim()) {
       toast.error('标题不能为空！');
-      return;
+      return {success: false};
     }
 
     const form = await buildFormData();
     if (!form) {
-      toast.error('没有内容可保存');
-      return;
+      return {success: true};
     }
 
     try {
       const response = await saveDiary(form);
       await handleSuccessfulSave(response);
       toast.success('手动保存成功');
+      return {success: true}
     } catch (err) {
       console.error('Manual save failed:', err);
       toast.error('手动保存失败: ' + (err instanceof Error ? err.message : '未知错误'));
+      return {success: false}
     }
-  };
+  },[title, buildFormData, saveDiary, handleSuccessfulSave])
+
+  // 返回按钮的点击处理函数
+  const handleBack = async () => {
+    if(!dirtyRef.current || !title.trim()) {
+      navigate('/diaries');
+      return;
+    }
+
+    const result = await handleSave();
+
+    if( result.success) {
+      navigate('/diaries');
+    }
+  }
 
   // 图片上传处理，读取图片并插入到Excalidraw画布
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -447,15 +462,246 @@ export default function DiaryEdit() {
     e.target.value = '';
   };
 
+  // return (
+  //   <div className="page-sheikah font-orbitron relative min-h-[1024px]">
+  //     <div className="absolute top-5 left-5 z-20">
+  //         <button onClick={handleBack} className="btn-zelda-apple">
+  //           返回
+  //         </button>
+  //     </div>
+  //     <img
+  //       src="/tears-of-kingdom.png"
+  //       alt="Background"
+  //       className="absolute top-0 left-0 w-full h-full object-fill z-10 pointer-events-none"
+  //     />
+
+  //     <div className="decorative-top py-5 mx-40% relative z-11 flex items-center gap-4">
+  //       <div className="taginput-zelda">
+  //         {tags.map(tag => (
+  //           <span key={tag} className="taginput-tag flex items-center gap-1">
+  //             {tag}
+  //             <button
+  //               onClick={() => removeTag(tag)}
+  //               className="text-red-300 hover:text-red-500 font-bold bg-transparent"
+  //             >
+  //               x
+  //             </button>
+  //           </span>
+  //         ))}
+  //         <input
+  //           type="text"
+  //           value={tagInput}
+  //           onChange={e => setTagInput(e.target.value)}
+  //           onKeyDown={handleTagKeyDown}
+  //           placeholder="输入标签..."
+  //           className="taginput-input"
+  //         />
+  //       </div>
+
+  //       <input
+  //         type="text"
+  //         maxLength={100}
+  //         placeholder="输入日记标题..."
+  //         value={title}
+  //         onChange={onTitleChange}
+  //         className="input-zelda-apple-lite"
+  //       />
+  //     </div>
+
+  //     <input
+  //       id="image-upload"
+  //       type="file"
+  //       accept="image/*"
+  //       capture="environment"
+  //       className="hidden"
+  //       onChange={handleImageUpload}
+  //     />
+
+  //     <ErrorBoundary>
+  //       <div className="w-screen h-screen relative z-5">
+  //         <Excalidraw
+  //           ref={excalidrawRef}
+  //           onChange={() => {
+  //             markDirty()
+  //           }}
+  //           viewModeEnabled={false}
+  //           zenModeEnabled={false}
+  //           UIOptions={{
+  //             canvasActions: {
+  //               loadScene: true,
+  //             },
+  //           }}
+  //           initialData={{
+  //             collaborators,
+  //             appState: {
+  //               viewBackgroundColor: '#f8f1d5',
+  //               collaborators,
+  //               contextMenu: null,
+  //             },
+  //             elements: Array.from({ length: 50 }, (_, i) => {
+  //               const y = 100 + i * 60
+  //               return {
+  //                 id: `line-${i}`,
+  //                 type: "line",
+  //                 x: 0,
+  //                 y,
+  //                 width: 5000,
+  //                 height: 0,
+  //                 angle: 0,
+  //                 strokeColor: "#3e6c4e",
+  //                 backgroundColor: "transparent",
+  //                 fillStyle: "hachure",
+  //                 strokeWidth: 2,
+  //                 strokeStyle: "solid",
+  //                 roughness: 0,
+  //                 opacity: 50,
+  //                 groupIds: [],
+  //                 roundness: null,
+  //                 seed: Math.floor(Math.random() * 100000),
+  //                 version: 1,
+  //                 versionNonce: Math.floor(Math.random() * 100000),
+  //                 isDeleted: false,
+  //                 boundElements: null,
+  //                 updated: Date.now(),
+  //                 link: null,
+  //                 locked: true,
+  //                 points: [
+  //                   [0, 0],
+  //                   [2500, 0],
+  //                 ],
+  //                 lastCommittedPoint: null,
+  //                 startBinding: null,
+  //                 endBinding: null,
+  //                 startArrowhead: null,
+  //                 endArrowhead: null,
+  //               } as ExcalidrawElement
+  //             }),
+  //           }}
+  //         >
+  //           <div className="absolute top-2 right-20% flex gap-2 z-4">
+  //             {/* <MoodSelector mood={mood} onChange={onMoodChange} /> */}
+  //             <button
+  //               onClick={() => document.getElementById('image-upload')?.click()}
+  //               className="btn-zelda-apple"
+  //             >
+  //               插入图片
+  //             </button>
+  //             {/* <button onClick={generatePreview} className="btn-zelda-apple">
+  //               预览
+  //             </button> */}
+  //             {/* <button onClick={handleSave} className="btn-zelda-apple">
+  //               保存
+  //             </button> */}
+  //           </div>
+  //         </Excalidraw>
+  //       </div>
+  //     </ErrorBoundary>
+
+  //     {previewImage && (
+  //       <div className="absolute top-10 left-10 w-80% max-w-800px bg-white border-2 border-blue-500 rounded-xl overflow-hidden shadow-lg z-100 p-4">
+  //         <img src={previewImage} alt="预览图" className="w-full h-auto object-contain" />
+  //         <button
+  //           onClick={() => setPreviewImage(null)}
+  //           className="mt-2 p-2 bg-red-500 text-white rounded"
+  //         >
+  //           关闭预览
+  //         </button>
+  //       </div>
+  //     )}
+  //   </div>
+  // )
   return (
-    <div className="page-sheikah font-orbitron relative min-h-[1024px]">
+    <div className="page-sheikah font-orbitron relative min-h-[1024px] flex flex-col">
+      <div className="absolute top-5 left-5 z-20">
+          <button onClick={handleBack} className="btn-zelda-apple">
+            返回
+          </button>
+      </div>
+
       <img
         src="/tears-of-kingdom.png"
         alt="Background"
         className="absolute top-0 left-0 w-full h-full object-fill z-10 pointer-events-none"
       />
 
-      <div className="decorative-top py-5 mx-40% relative z-11 flex items-center gap-4">
+      <header className="decorative-top py-5 w-full relative z-11 flex items-center justify-center gap-4">
+        {/* Mood选择器 */}
+        <MoodSelector mood={mood} onChange={onMoodChange} />
+
+        {/* 标题输入 */}
+        <input
+          type="text"
+          maxLength={100}
+          placeholder="输入日记标题..."
+          value={title}
+          onChange={onTitleChange}
+          className="input-zelda-apple-lite w-1/3" // 增加宽度
+        />
+
+        {/* 预览和插入图片按钮 */}
+        <button onClick={generatePreview} className="btn-zelda-apple">
+          预览
+        </button>
+        <button
+          onClick={() => document.getElementById('image-upload')?.click()}
+          className="btn-zelda-apple"
+        >
+          插入图片
+        </button>
+      </header>
+
+      <input
+        id="image-upload"
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
+      <main className="flex-grow w-full h-full relative">
+        <ErrorBoundary>
+          <div className="absolute inset-0 z-5">
+            <Excalidraw
+              ref={excalidrawRef}
+              onChange={() => {
+                markDirty()
+              }}
+              viewModeEnabled={false}
+              zenModeEnabled={false}
+              UIOptions={{
+                canvasActions: {
+                  loadScene: true,
+                },
+              }}
+              initialData={{
+                collaborators,
+                appState: {
+                  viewBackgroundColor: '#f8f1d5',
+                  collaborators,
+                  contextMenu: null,
+                },
+                elements: Array.from({ length: 50 }, (_, i) => {
+                  const y = 100 + i * 60
+                  return {
+                    id: `line-${i}`, type: "line", x: 0, y, width: 5000, height: 0, angle: 0,
+                    strokeColor: "#3e6c4e", backgroundColor: "transparent", fillStyle: "hachure",
+                    strokeWidth: 2, strokeStyle: "solid", roughness: 0, opacity: 50, groupIds: [],
+                    roundness: null, seed: Math.floor(Math.random() * 100000), version: 1,
+                    versionNonce: Math.floor(Math.random() * 100000), isDeleted: false,
+                    boundElements: null, updated: Date.now(), link: null, locked: true,
+                    points: [[0, 0], [2500, 0]], lastCommittedPoint: null, startBinding: null,
+                    endBinding: null, startArrowhead: null, endArrowhead: null,
+                  } as ExcalidrawElement
+                }),
+              }}
+            />
+          </div>
+        </ErrorBoundary>
+      </main>
+      
+      {/* --- 新增: 标签输入移动到底部 --- */}
+      <footer className="w-full py-3 flex justify-center items-center relative z-11">
         <div className="taginput-zelda">
           {tags.map(tag => (
             <span key={tag} className="taginput-tag flex items-center gap-1">
@@ -477,105 +723,8 @@ export default function DiaryEdit() {
             className="taginput-input"
           />
         </div>
+      </footer>
 
-        <input
-          type="text"
-          maxLength={100}
-          placeholder="输入日记标题..."
-          value={title}
-          onChange={onTitleChange}
-          className="input-zelda-apple-lite"
-        />
-      </div>
-
-      <input
-        id="image-upload"
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleImageUpload}
-      />
-
-      <ErrorBoundary>
-        <div className="w-screen h-screen relative z-5">
-          <Excalidraw
-            ref={excalidrawRef}
-            onChange={() => {
-              markDirty()
-            }}
-            viewModeEnabled={false}
-            zenModeEnabled={false}
-            UIOptions={{
-              canvasActions: {
-                loadScene: true,
-              },
-            }}
-            initialData={{
-              collaborators,
-              appState: {
-                viewBackgroundColor: '#f8f1d5',
-                collaborators,
-                contextMenu: null,
-              },
-              elements: Array.from({ length: 50 }, (_, i) => {
-                const y = 100 + i * 60
-                return {
-                  id: `line-${i}`,
-                  type: "line",
-                  x: 0,
-                  y,
-                  width: 5000,
-                  height: 0,
-                  angle: 0,
-                  strokeColor: "#3e6c4e",
-                  backgroundColor: "transparent",
-                  fillStyle: "hachure",
-                  strokeWidth: 2,
-                  strokeStyle: "solid",
-                  roughness: 0,
-                  opacity: 50,
-                  groupIds: [],
-                  roundness: null,
-                  seed: Math.floor(Math.random() * 100000),
-                  version: 1,
-                  versionNonce: Math.floor(Math.random() * 100000),
-                  isDeleted: false,
-                  boundElements: null,
-                  updated: Date.now(),
-                  link: null,
-                  locked: true,
-                  points: [
-                    [0, 0],
-                    [2500, 0],
-                  ],
-                  lastCommittedPoint: null,
-                  startBinding: null,
-                  endBinding: null,
-                  startArrowhead: null,
-                  endArrowhead: null,
-                } as ExcalidrawElement
-              }),
-            }}
-          >
-            <div className="absolute top-2 right-20% flex gap-2 z-4">
-              <MoodSelector mood={mood} onChange={onMoodChange} />
-              <button
-                onClick={() => document.getElementById('image-upload')?.click()}
-                className="btn-zelda-apple"
-              >
-                插入图片
-              </button>
-              <button onClick={generatePreview} className="btn-zelda-apple">
-                预览
-              </button>
-              <button onClick={handleSave} className="btn-zelda-apple">
-                保存
-              </button>
-            </div>
-          </Excalidraw>
-        </div>
-      </ErrorBoundary>
 
       {previewImage && (
         <div className="absolute top-10 left-10 w-80% max-w-800px bg-white border-2 border-blue-500 rounded-xl overflow-hidden shadow-lg z-100 p-4">
@@ -590,4 +739,5 @@ export default function DiaryEdit() {
       )}
     </div>
   )
+
 }
