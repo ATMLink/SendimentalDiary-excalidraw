@@ -69,7 +69,7 @@ export default function DiaryEdit() {
     const [isSidebarOpen, setSidebarOpen] = useState(false);
     const dirtyRef = useRef(false);
     const serverFileMap = useRef<Record<string, { url?: string }>>({});
-    
+    const isSavingRef = useRef(false);
     const markDirty = () => { dirtyRef.current = true; };
 
     const collaborators = useMemo(
@@ -245,34 +245,55 @@ const buildFormData = useCallback(async () => {
 
     // 自动保存
     useEffect(() => {
-        if (!dirtyRef.current || !title.trim()) {
-            return;
-        }
+        // 设置保存间隔，单位为毫秒 (例如：30秒)
+        const AUTOSAVE_INTERVAL = 30000; 
 
-        const debounceTimer = setTimeout(async () => {
-            if (!dirtyRef.current) return;
+        // console.log("自动保存计时器已启动，每30秒检查一次。");
 
-            // setAutoSaveStatus('saving');
+        const intervalId = setInterval(async () => {
+            // 检查1：如果当前没有未保存的更改，则跳过
+            if (!dirtyRef.current) {
+                // console.log("内容无变化，跳过本次自动保存。");
+                return;
+            }
+            // 检查2：如果上一个保存操作还未完成，则跳过
+            if (isSavingRef.current) {
+                // console.log("正在保存中，跳过本次自动保存。");
+                return;
+            }
+
+            // console.log("检测到更改，正在执行自动保存...");
+            isSavingRef.current = true;
+            
             const form = await buildFormData();
             if (!form) {
-                // setAutoSaveStatus('idle');
+                isSavingRef.current = false;
                 return;
             };
 
             try {
-                await saveDiary(form);
-                dirtyRef.current = false;
-                // setAutoSaveStatus('saved');
-                // setTimeout(() => setAutoSaveStatus('idle'), 2000);
+                const response = await saveDiary(form);
+                await handleSuccessfulSave(response); // 这个函数会把 dirtyRef.current 设为 false
+                // toast.success('已自动保存！', { duration: 2000 });
             } catch (error) {
-                console.error(error);
-                toast.error('自动保存失败');
-                // setAutoSaveStatus('idle');
+                console.error("定时自动保存失败:", error);
+                // 定时保存失败一般不强烈打扰用户，只在控制台打印错误
+                // 如果需要，也可以加一个不自动消失的 toast
+                // toast.error('自动保存失败，请检查网络连接');
+            } finally {
+                isSavingRef.current = false;
             }
-        }, 30_000); // 延迟3秒
 
-        return () => clearTimeout(debounceTimer);
-    }, [title, mood, tags, buildFormData, saveDiary]);
+        }, AUTOSAVE_INTERVAL);
+
+        // 组件卸载时，必须清除定时器，防止内存泄漏
+        return () => {
+            clearInterval(intervalId);
+            console.log("自动保存计时器已清除。");
+        };
+
+    // 依赖项应包含 useEffect 内部闭包所使用的、且可能变化的函数
+    }, [buildFormData, saveDiary, handleSuccessfulSave]);
 
     const onTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => { setTitle(e.target.value); markDirty(); };
     const onMoodChange = (m: Mood) => { setMood(m); markDirty(); };
