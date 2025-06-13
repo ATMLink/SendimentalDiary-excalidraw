@@ -24,7 +24,7 @@ export function useDiarySave(
     onSuccess: (res) => {
       const id = res.data._id
       setDiaryId(id) // 保存 ID，下一次变为 PATCH
-      toast.success('日记创建成功！')
+      // toast.success('日记创建成功！')
       // alert('日记创建成功！')
       // navigate('/diaries')
     },
@@ -36,7 +36,7 @@ export function useDiarySave(
       updateDiary(id, form),
     onSuccess: () => {
       // console.log('自动保存成功')
-      toast.success('日记保存成功')
+      // toast.success('日记保存成功')
     },
     onError: handleError,
   })

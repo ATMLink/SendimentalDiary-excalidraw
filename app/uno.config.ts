@@ -18,6 +18,10 @@ import {
       colors: {
         zeldaGold: '#f8f1d5',
         zeldaGreen: '#3e6c4e',
+        zeldaGreenBright: '#45a049',
+        lightGreen: '#4CAF50',
+        mintGreen: '#5DBB63',
+        grassGreen: '#66BB6A',
         zeldaYellow: '#ffe86c',
         sheikahBlue: '#00f9e5',
         pink: {
@@ -47,6 +51,21 @@ import {
       'input-zelda': 'bg-[#1a3322] text-[#ffdc55] placeholder-[#ffdc55] border-none p-2 rounded outline-none focus:ring-2 focus:ring-[#3ba477]',
       'title-zelda': 'text-4xl font-cinzel text-center text-zeldaGold drop-shadow',
       
+      'btn-zelda-square': `
+        relative inline-flex items-center justify-center
+        w-12 h-12 p-2 
+        font-semibold font-orbitron text-lg
+        rounded-lg border border-zeldaGreen
+        bg-zeldaGreen text-zeldaGold
+        hover:bg-zeldaYellow hover:text-zeldaGreen
+        transition-all duration-200 ease-in-out
+        will-change-transform transform hover:scale-105
+        overflow-hidden
+        backdrop-blur-md bg-opacity-80
+        after:(content-empty absolute inset-0 -z-1 bg-zeldaYellow rounded-lg transform -translate-x-[110%] rotate-6 transition-transform duration-200)
+        hover:after:(translate-x-0)
+      `,
+
       'btn-zelda-apple': `
         relative inline-block
         font-semibold font-orbitron text-lg leading-snug tracking-tight
@@ -60,7 +79,7 @@ import {
         backdrop-blur-md bg-opacity-80
         after:(content-empty absolute inset-0 -z-1 bg-zeldaYellow rounded-full transform -translate-x-full rotate-6 transition-transform duration-200)
         hover:after:(translate-x-0)`,
-      
+
         'input-zelda-apple': `
           w-full max-w-600
           font-orbitron text-base text-zeldaGold placeholder-zeldaGold
@@ -94,6 +113,14 @@ import {
           transition-all duration-200
           backdrop-blur-md`,
 
+        'container-zelda-apple-lite': `
+          font-orbitron text-zeldaGold
+          bg-#3e6c4e/30 bg-opacity-80
+          border border-#3e6c4e
+          shadow-inner shadow-#3e6c4e/20
+          backdrop-blur-md
+          transition-all duration-200`,
+
         'select-zelda-apple': `
           appearance-none
           font-orbitron text-base text-zeldaGold
@@ -126,7 +153,7 @@ import {
           font-orbitron text-sm
           px-3 py-1
           rounded-full border border-zeldaGreen
-          bg-zeldaYellow text-zeldaGreen
+          bg-zeldaGreen text-zeldaYellow
           transition-all duration-200 ease-in-out
           flex-shrink-0
         `,
@@ -166,9 +193,19 @@ import {
       'input-sheikah': 'w-full max-w-600 bg-black text-sheikah-blue border border-sheikah-blue rounded-lg p-3 shadow-inner shadow-sheikah-blue/20 focus:outline-none focus:ring-2 focus:ring-sheikah-blue',
       'select-sheikah': 'bg-black border border-sheikah-blue text-sheikah-blue rounded p-2 focus:outline-none',
       'canvas-sheikah': 'px-12 flex-1 min-h-0 border-2 border-sheikah-blue rounded-lg shadow-md shadow-sheikah-blue/30 overflow-hidden',
-      'page-sheikah': 'flex flex-col h-screen w-screen bg-[#0c0c0c] text-sheikah-blue font-sheikah',
+      'page-sheikah': 'flex flex-col h-screen w-screen bg-[#0c0c0c] text-#f8f1d5 font-sheikah',
       'centered-container': 'flex flex-col items-center justify-center',
     
+      // side bar icon
+      'icon-sidebar-collapse': 'i-cuida-sidebar-collapse-outline text-zeldaGold text-2xl transform scale-x--100 hover:text-zeldaYellow transition-colors duration-200',
+      'icon-sidebar-expand': 'i-cuida-sidebar-expand-outline text-zeldaGreen text-2xl transform scale-x--100 hover:text-lightGreen transition-colors duration-200', 
+      
+      // back icon
+      'icon-back': 'i-formkit-arrowleft text-grassGreen text-2xl',
+
+      // x
+      'icon-close': 'i-cuida-x-outline text-red-300 text-lg hover:text-red-500 transition-colors duration-200',
+
       // font shortcuts
       'font-orbitron': 'font-orbitron',
       'font-sheikah': 'font-cinzel',
