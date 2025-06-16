@@ -173,6 +173,32 @@ router.get(
   }
 );
 
+// GET /api/diaries - 获取当前用户的所有日记
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+    try {
+        const userId = (req as any).user.userId;
+        const { mood, tag, search } = req.query;
+        const filter: any = { user: userId };
+
+        if (mood) {
+            filter.mood = mood as string;
+        }
+        if (tag) {
+            filter.tags = tag as string;
+        }
+        if (search) {
+            // 使用正则表达式进行模糊搜索，i 表示不区分大小写
+            filter.title = { $regex: search as string, $options: 'i' };
+        }
+        
+        const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
+        res.json(diaries);
+    } catch (error) {
+        console.error('Fetch diaries error:', error);
+        res.status(500).json({ message: '获取日记列表失败', error });
+    }
+});
+
 // 列出标签
 router.get(
   '/tags',

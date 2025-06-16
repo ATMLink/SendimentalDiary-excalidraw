@@ -1,12 +1,7 @@
 // app/src/api/auth.ts
 import api from '../lib/axios'
+import { User } from '../types/user'
 
-export interface User {
-    _id: string
-    username: string
-    email: string
-    color: string
-  }
 // 登录：返回 { token: string }
 export function loginApi(data: { username: string; password: string }) {
   return api.post<{ token: string }>('/auth/login', data).then(res => res.data)

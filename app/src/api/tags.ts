@@ -1,6 +1,8 @@
 // app/src/api/tags.ts
-import axios from 'axios'
+import api from '../lib/axios';
 
-export function fetchTags() {
-  return axios.get<string[]>('/api/diaries/tags')
-}
+// 获取所有不重复的标签名
+export const getTags = async (): Promise<string[]> => {
+  const { data } = await api.get('/tags');
+  return data;
+};

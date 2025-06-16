@@ -174,6 +174,15 @@ import {
           rounded-full w-5 h-5 flex items-center justify-center
         `,
 
+        // ---  日记卡片样式  ---
+        'diary-card': `
+          bg-zeldaGreen/20 border border-zeldaGreen/50 rounded-lg
+          overflow-hidden shadow-md shadow-zeldaGreen/20
+          transition-all duration-300 ease-in-out
+          hover:(transform -translate-y-1 shadow-lg shadow-zeldaYellow/30 border-zeldaYellow)
+          backdrop-blur-sm
+        `,
+
         // toast styles
         'toast-zelda': `
           bg-zeldaGreen/70 text-zeldaGold font-orbitron text-sm px-4 py-2
@@ -193,8 +202,9 @@ import {
       'input-sheikah': 'w-full max-w-600 bg-black text-sheikah-blue border border-sheikah-blue rounded-lg p-3 shadow-inner shadow-sheikah-blue/20 focus:outline-none focus:ring-2 focus:ring-sheikah-blue',
       'select-sheikah': 'bg-black border border-sheikah-blue text-sheikah-blue rounded p-2 focus:outline-none',
       'canvas-sheikah': 'px-12 flex-1 min-h-0 border-2 border-sheikah-blue rounded-lg shadow-md shadow-sheikah-blue/30 overflow-hidden',
-      'page-sheikah': 'flex flex-col h-screen w-screen bg-[#0c0c0c] text-#f8f1d5 font-sheikah',
+      'page-sheikah': 'flex flex-col h-screen w-screen bg-zeldaGreen/30 text-#f8f1d5 font-sheikah',
       'centered-container': 'flex flex-col items-center justify-center',
+      'page-sheikah-diaries': 'flex flex-col min-h-screen w-screen bg-zeldaGreen/20 text-#f8f1d5 font-sheikah',
     
       // side bar icon
       'icon-sidebar-collapse': 'i-cuida-sidebar-collapse-outline text-zeldaGold text-2xl transform scale-x--100 hover:text-zeldaYellow transition-colors duration-200',

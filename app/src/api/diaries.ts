@@ -1,5 +1,7 @@
 // app/src/api/diaries.ts
 import axios from 'axios';
+import api from '../lib/axios';
+import type { Diary } from '../types/diary';
 
 export function postDiary(formData: FormData){
   const token = localStorage.getItem('token') || ''; // 从 localStorage 中获取 token
@@ -28,3 +30,15 @@ export async function fetchDiaryById(id: string) {
   })
   return res.json()
 }
+
+export interface GetDiariesParams {
+  mood?: string;
+  tag?: string;
+  search?: string;
+}
+
+export const getDiaries = async (params: GetDiariesParams = {}): Promise<Diary[]> => {
+  // 使用 axios 的 params 选项来传递查询参数
+  const { data } = await api.get('/diaries', { params });
+  return data;
+};
