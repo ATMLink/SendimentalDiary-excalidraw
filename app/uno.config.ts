@@ -204,7 +204,7 @@ import {
       'canvas-sheikah': 'px-12 flex-1 min-h-0 border-2 border-sheikah-blue rounded-lg shadow-md shadow-sheikah-blue/30 overflow-hidden',
       'page-sheikah': 'flex flex-col h-screen w-screen bg-zeldaGreen/30 text-#f8f1d5 font-sheikah',
       'centered-container': 'flex flex-col items-center justify-center',
-      'page-sheikah-diaries': 'flex flex-col min-h-screen w-screen bg-zeldaGreen/20 text-#f8f1d5 font-sheikah',
+      'page-sheikah-diaries': 'flex flex-col min-h-screen w-screen bg-zeldaGreen/20 text-#f8f1d5 font-sheikah overflow-hidden',
     
       // side bar icon
       'icon-sidebar-collapse': 'i-cuida-sidebar-collapse-outline text-zeldaGold text-2xl transform scale-x--100 hover:text-zeldaYellow transition-colors duration-200',
