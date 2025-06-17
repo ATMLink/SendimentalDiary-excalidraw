@@ -33,12 +33,35 @@ export async function fetchDiaryById(id: string) {
 
 export interface GetDiariesParams {
   mood?: string;
-  tag?: string;
+  tags?: string[];
   search?: string;
 }
 
+// app/src/api/diaries.ts
+
 export const getDiaries = async (params: GetDiariesParams = {}): Promise<Diary[]> => {
-  // 使用 axios 的 params 选项来传递查询参数
-  const { data } = await api.get('/diaries', { params });
-  return data;
+ console.log('getDiaries function called with params:', params);
+
+ // 1. 使用 URLSearchParams 来构建查询字符串
+ const searchParams = new URLSearchParams();
+
+ // 2. 添加其他参数
+ if (params.mood) {
+  searchParams.append('mood', params.mood);
+ }
+ if (params.search) {
+  searchParams.append('search', params.search);
+ }
+ 
+ // 3. 关键：为数组中的每个标签重复添加 'tags' 键
+ if (params.tags && params.tags.length > 0) {
+  params.tags.forEach(tag => {
+   searchParams.append('tags', tag);
+  });
+ }
+
+ // 4. 使用生成的查询字符串发起请求
+ // 此时的 URL 会是 /diaries?tags=work&tags=study (如果选中了这两个标签)
+ const { data } = await api.get(`/diaries?${searchParams.toString()}`);
+ return data;
 };

@@ -177,21 +177,28 @@ router.get(
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
-        const { mood, tag, search } = req.query;
+        const { mood, tags, search } = req.query;
         const filter: any = { user: userId };
 
         if (mood) {
             filter.mood = mood as string;
         }
-        if (tag) {
-            filter.tags = tag as string;
+        if (tags) {
+          const tagsArray = Array.isArray(tags) ? tags : [tags];
+          if (tagsArray.length > 0) {
+            filter.tags = { $in: tagsArray };
+          }
         }
         if (search) {
             // 使用正则表达式进行模糊搜索，i 表示不区分大小写
             filter.title = { $regex: search as string, $options: 'i' };
         }
+
+        // console.log('Sending to MongoDB:', filter); 
+
+        const diaries = await Diary.find(filter).sort({ createdAt: -1 }); // 按创建时间倒序
         
-        const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
+        // const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
         res.json(diaries);
     } catch (error) {
         console.error('Fetch diaries error:', error);
@@ -200,17 +207,17 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 });
 
 // 列出标签
-router.get(
-  '/tags',
-  async (_req: Request, res: Response): Promise<void> => {
-    try {
-      const tags = await Tag.find({}, 'name').sort({ name: 1 });
-      res.json(tags.map(t => t.name));
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: '获取标签失败' });
-    }
-  }
-);
+// router.get(
+//   '/tags',
+//   async (_req: Request, res: Response): Promise<void> => {
+//     try {
+//       const tags = await Tag.find({}, 'name').sort({ name: 1 });
+//       res.json(tags.map(t => t.name));
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).json({ message: '获取标签失败' });
+//     }
+//   }
+// );
 
 export default router;

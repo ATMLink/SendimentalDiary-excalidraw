@@ -5,6 +5,7 @@ import path from 'path'
 import mongoose from 'mongoose'
 import authRouter from './routes/auth'
 import diariesRouter from './routes/diaries'
+import tagsRoutes from './routes/tags'
 
 const app = express()
 app.use(cors({
@@ -26,7 +27,7 @@ app.use('/uploads', cors({
   origin: 'http://localhost:5173',
   methods: ['GET'],
 }), (req, res, next) => {
-  console.log(`Serving file: ${req.url}`); // 调试图片请求
+  // console.log(`Serving file: ${req.url}`); // 调试图片请求
   const filePath = path.join(__dirname, '../uploads');
   express.static(filePath)(req, res, () => {
     // 处理文件不存在的情况
@@ -42,6 +43,7 @@ mongoose.connect('mongodb://localhost:27017/zeldaDiary')
 
 app.use('/api/auth', authRouter)
 app.use('/api/diaries', diariesRouter)
+app.use('/api/tags', tagsRoutes)
 // ... 其他路由
 
 app.listen(3000, () => {
