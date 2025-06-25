@@ -17,7 +17,7 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="page-sheikah flex flex-col items-center justify-center text-white p-4">
+    <div className="page-sheikah flex flex-col items-center justify-center text-white">
       <div className="p-8 container-zelda-apple-lite rounded-xl w-full max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4 text-zeldaYellow">Welcome, {user.username}</h1>
         <p className="mb-2">Email: {user.email || 'N/A'}</p>
@@ -28,6 +28,12 @@ const Home: React.FC = () => {
             onClick={() => navigate('/diaries')} // --- 指向正确的图鉴页 ---
           >
             查看日记图鉴
+          </button>
+          <button
+            className="btn-zelda-apple"
+            onClick={() => navigate('/wishlist')}
+          >
+            愿望清单
           </button>
           {/* <button
             className="btn-zelda-apple"

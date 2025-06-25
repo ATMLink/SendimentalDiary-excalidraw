@@ -8,6 +8,8 @@ import Diaries from '../pages/Diaries';
 import DiaryDetail from '../pages/DiaryDetail';
 import DiaryEdit from '../pages/DiaryEditor';
 import ProtectedRoute from '../components/common/ProtectedRoute';
+// import WishlistHistory from '../pages/WishlistHistory';
+import Wishlist from '../pages/Wishlist';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +40,14 @@ const router = createBrowserRouter([
         path: 'new', // 新建日记页
         element: <ProtectedRoute><DiaryEdit /></ProtectedRoute>,
       },
+      {
+        path: 'wishlist', // 愿望清单页
+        element: <ProtectedRoute><Wishlist /></ProtectedRoute>,
+      },
+      // {
+      //   path: 'wishlist/history',
+      //   element: <ProtectedRoute><WishlistHistory /></ProtectedRoute>,
+      // },
     ],
   },
 ]);

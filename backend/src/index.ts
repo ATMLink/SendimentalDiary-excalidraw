@@ -6,11 +6,12 @@ import mongoose from 'mongoose'
 import authRouter from './routes/auth'
 import diariesRouter from './routes/diaries'
 import tagsRoutes from './routes/tags'
+import wishesRouter from './routes/wishes'
 
 const app = express()
 app.use(cors({
   origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 app.use(express.json({limit: '10mb'}))
@@ -44,6 +45,7 @@ mongoose.connect('mongodb://localhost:27017/zeldaDiary')
 app.use('/api/auth', authRouter)
 app.use('/api/diaries', diariesRouter)
 app.use('/api/tags', tagsRoutes)
+app.use('/api/wishes', wishesRouter)
 // ... 其他路由
 
 app.listen(3000, () => {

@@ -16,11 +16,14 @@ import router from './router'; // 导入我们创建的路由实例
 
 const queryClient = new QueryClient
 
+const rootElement = document.getElementById('root') as HTMLElement;
+const root = createRoot(rootElement);
 
-createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+
+root.render(
+  // <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>
-  </React.StrictMode>,
+  // </React.StrictMode>,
 )
