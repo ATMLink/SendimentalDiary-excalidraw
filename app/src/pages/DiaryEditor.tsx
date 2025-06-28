@@ -838,7 +838,7 @@ return (
 
         <img src="/tears-of-kingdom.png" alt="Background" className="absolute top-0 left-0 w-full h-full object-fill z-10 pointer-events-none" />
 
-        <header className="decorative-top py-5 w-full relative z-11 flex items-center justify-center gap-4">
+        <header className="decorative-top py-3 w-full relative z-11 flex items-center justify-center gap-4">
             {/* 核心修改 3: 增大标题输入框的触控区域 */}
             <input
                 type="text"
