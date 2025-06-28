@@ -816,7 +816,7 @@ return (
     <div className="page-sheikah font-orbitron relative min-h-screen flex flex-col overflow-x-hidden">
         {/* 顶部按钮组 */}
         {/* 核心修改 1: 调整按钮位置，并增大触控区域 */}
-        <div className="absolute top-4 left-4 sm:top-5 sm:left-5 z-40 flex gap-2"> {/* 增加 gap-2，方便后续添加更多按钮 */}
+        <div className="absolute top-4 left-4 sm:top-5 sm:left-5 z-40 flex "> {/* 增加 gap-2，方便后续添加更多按钮 */}
             <button
                 onClick={handleBack}
                 className="btn-zelda-square w-12 h-12 p-2 flex items-center justify-center rounded-lg" 
@@ -838,7 +838,7 @@ return (
 
         <img src="/tears-of-kingdom.png" alt="Background" className="absolute top-0 left-0 w-full h-full object-fill z-10 pointer-events-none" />
 
-        <header className="decorative-top py-3 w-full relative z-11 flex items-center justify-center gap-4">
+        <header className="decorative-top py-1 w-full relative z-11 flex items-center justify-center gap-4">
             {/* 核心修改 3: 增大标题输入框的触控区域 */}
             <input
                 type="text"
@@ -915,14 +915,13 @@ return (
                         )}
                     </div>
 
-                    {/* 核心修改 7: 增大标签输入框的触控区域 */}
                     <input
                         type="text"
                         value={tagInput}
                         onChange={e => setTagInput(e.target.value)}
                         onKeyDown={handleTagKeyDown}
                         placeholder="添加新标签后按回车"
-                        className="input-zelda-apple-lite w-full px-4 py-2 text-base" 
+                        className="input-zelda-apple-lite w-60" 
                     />
                 </div>
             </div>
