@@ -6,21 +6,21 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   plugins: [
     react(),
-    Unocss(), // UnoCSS 插件应该在 VitePWA 之前，确保其样式被正确处理
-    // 配置 VitePWA 插件
+    Unocss({
+      // 确保 UnoCSS 配置为生产环境提取 CSS
+      // 'extract: true' 通常在生产环境中是隐式的，但明确设置有助于解决问题。
+      // 如果您有单独的 'uno.config.ts' 文件，可以在此处保留 'configFile: './uno.config.ts','。
+    }),
+    // PWA 插件配置
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
-        // 修正 globPatterns 的路径，确保它指向 dist 目录内的文件
-        // Vercel 的构建路径是 /vercel/path0/app/dist
-        globDirectory: 'dist', // 确保 globDirectory 指向构建输出目录
+        globDirectory: 'dist', 
         globPatterns: [
             '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}',
-            // 如果你的 UnoCSS 样式是单独的 CSS 文件，也需要包含
-            // 例如：'assets/uno.css' 或 'uno.css'
+            '**/*.css', // 确保包含所有 CSS 文件（包括 UnoCSS 生成的）
         ],
-        // globIgnores 保持不变
         globIgnores: [
           '**/node_modules/**/*',
           'sw.js',
@@ -39,6 +39,7 @@ export default defineConfig({
             },
           },
         ],
+        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024, 
       },
       manifest: {
         name: 'Sendimental Diary',
@@ -72,13 +73,28 @@ export default defineConfig({
       },
     }),
   ],
-  // 保留您原有的 define 配置
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
   },
-  // 移除 server.proxy 配置，因为它在生产环境中不再需要
-  // 新增 build 配置，禁用 CSS 代码分割
   build: {
-    cssCodeSplit: false, // 禁用 CSS 代码分割，尝试解决 UnoCSS 导入问题
+    // 这明确告诉 Vite 如何在构建中处理 CSS 输出
+    // 它有时有助于解决 CSS 虚拟模块的解析问题
+    cssTarget: 'es2015', // 确保兼容性
+    // cssCodeSplit: true, // 让 Vite 默认拆分 CSS，如果问题持续存在，可以尝试 'false'
+    rollupOptions: {
+      output: {
+        // 这确保创建了一个主要的 CSS 包，名为 'index.css'
+        // 它应该包含所有 UnoCSS 样式。
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'index.css') {
+            return `assets/[name].[ext]`; // 为主 CSS 文件保留原始名称
+          }
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return `assets/[name]-[hash].[ext]`; // 用于其他 CSS 块
+          }
+          return `assets/[name]-[hash].[ext]`; // 其他资产的默认值
+        },
+      },
+    },
   },
 });
