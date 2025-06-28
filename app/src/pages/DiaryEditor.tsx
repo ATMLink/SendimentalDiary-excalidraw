@@ -133,7 +133,8 @@ export default function DiaryEdit() {
                 const filesArray = await Promise.all(
                     Object.values(sceneFiles).map(async (file) => {
                         if (!file || !file.url) return null;
-                        const res = await fetch(`http://localhost:3000${file.url}`);
+                        // const res = await fetch(`http://localhost:3000${file.url}`);
+                        const res = await fetch(file.url!);
                         const blob = await res.blob();
                         const dataURL = await blobToDataURL(blob);
                         return {

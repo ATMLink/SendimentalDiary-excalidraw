@@ -10,9 +10,13 @@ import type { Diary } from '../types/diary';
 
 // 卡片组件保持不变
 const DiaryCard = ({ diary, navigate }: { diary: Diary; navigate: (path:string) => void }) => {
-  const coverImage = diary.image && diary.image.length > 0 
-    ? `http://localhost:3000${diary.image[0]}` 
-    : '/tears-of-kingdom.png';
+  // const coverImage = diary.image && diary.image.length > 0 
+  //   ? `http://localhost:3000${diary.image[0]}` 
+  //   : '/tears-of-kingdom.png';
+
+  const coverImage = diary.image?.length
+  ? diary.image[0]   // 这里已经是 public Blob URL 了
+  : '/tears-of-kingdom.png';
 
   // 1. 定义一个内联样式，用于将用户的颜色传递给 CSS
   const cardStyle = {
