@@ -1,250 +1,616 @@
+// // backend/src/routes/diaries.ts
+// import express, { Request, Response, RequestHandler } from 'express';
+// import Diary from '../models/Diary';
+// import jwt from 'jsonwebtoken';
+// import { put } from '@vercel/blob'; 
+// import multer from 'multer';
+// import path from 'path';
+// import fs from 'fs';
+// import Tag from '../models/Tag';
+// import User from '../models/User'; 
+// import { Types } from 'mongoose';
+// import { del } from '@vercel/blob'; // 用于删除 Vercel Blob 中的文件
+// import { authenticateToken, AuthenticatedRequest } from '../middleware/auth'; // 自定义类型，用于包含用户信息的请求
+
+// const router = express.Router();
+// const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-env-var';
+
+// // 上传目录
+// const uploadDir = path.join(__dirname, '../../uploads');
+// const contentImgDir = path.join(uploadDir, 'contentImg');
+// if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+// if (!fs.existsSync(contentImgDir)) fs.mkdirSync(contentImgDir);
+
+// // multer 存储配置（本地）
+// // const storage = multer.diskStorage({
+// //   destination: (req, file, cb) => {
+// //     const dest = file.fieldname === 'snapshot' ? uploadDir : contentImgDir;
+// //     if (file.fieldname !== 'snapshot' && !fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+// //     cb(null, dest);
+// //   },
+// //   filename: (_req, file, cb) => {
+// //     const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+// //     cb(null, `${unique}${path.extname(file.originalname)}`);
+// //   },
+// // });
+
+// // multer 存储配置（内存）
+// const upload = multer({ storage: multer.memoryStorage(), limits: {  fieldSize: 25 * 1024 * 1024, files: 50, fields: 50, fileSize: 100 * 1024 * 1024 } });
+
+// // JWT 认证中间件
+// // const authenticateToken: RequestHandler = (req, res, next) => {
+// //   const authHeader = req.headers.authorization;
+// //   if (!authHeader) {
+// //     res.status(401).json({ message: 'No token' });
+// //     return;
+// //   }
+// //   try {
+// //     const token = authHeader.split(' ')[1];
+// //     const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
+// //     (req as any).user = payload;
+// //     next();
+// //     return;
+// //   } catch {
+// //     res.status(403).json({ message: 'Invalid token' });
+// //     return;
+// //   }
+// // };
+
+// // 处理内容与文件
+// const processContentAndFiles = (req: Request): { content: string; snapshotUrl: string | null } => {
+//     const { content } = req.body;
+//     if (!content) {
+//         return { content: JSON.stringify({ elements: [], appState: {}, files: {} }), snapshotUrl: null };
+//     }
+
+//     const contentObject = JSON.parse(content);
+//     const uploadedFiles = req.files as Express.Multer.File[] | undefined;
+//     let snapshotUrl: string | null = null;
+
+//     if (uploadedFiles) {
+//         if (!contentObject.files) contentObject.files = {};
+        
+//         uploadedFiles.forEach(file => {
+//             const fileId = file.fieldname;
+            
+//             // --- 这是最关键的修复 ---
+//             // 从文件的绝对路径中，只截取 "uploads" 之后的部分
+//             const relativePath = file.path.substring(file.path.indexOf('uploads'));
+//             // 将 Windows 的路径分隔符 '\' 替换为 URL 标准的 '/'
+//             const url = '/' + relativePath.replace(/\\/g, '/'); 
+
+//             if (fileId === 'snapshot') {
+//                 snapshotUrl = url;
+//             } else if (contentObject.files[fileId]) {
+//                 contentObject.files[fileId].url = url;
+//                 delete contentObject.files[fileId].dataURL;
+//             }
+//         });
+//     }
+    
+//     return {
+//         content: JSON.stringify(contentObject),
+//         snapshotUrl
+//     };
+// };
+
+// // 创建日记
+// // router.post(
+// //   '/',
+// //   authenticateToken,
+// //   upload.any(),
+// //   async (req: Request, res: Response): Promise<void> => {
+// //     try {
+// //       const { title, mood, tags } = req.body;
+// //       const userId = (req as any).user.userId;
+// //       if (!title || title.trim() === '') {
+// //         res.status(400).json({ message: '标题不能为空' });
+// //         return;
+// //       }
+// //       const { content: finalContent, snapshotUrl } = processContentAndFiles(req);
+// //       const rawTags = Array.isArray(tags) ? tags : tags ? [tags] : [];
+// //       for (const tagName of rawTags) {
+// //         if (tagName.trim()) {
+// //           await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+// //         }
+// //       }
+// //       const diary = await Diary.create({ title, mood, content: finalContent, tags: rawTags, image: snapshotUrl ? [snapshotUrl] : [], user: userId });
+      
+// //       const positiveMoods = ['happy', 'excited'];
+// //       const negativeMoods = ['sad', 'anxious'];
+// //       let moodChange = 0;
+
+// //       if (positiveMoods.includes(mood)) {
+// //         moodChange = 10;
+// //       } else if (negativeMoods.includes(mood)) {
+// //         moodChange = -10;
+// //       }
+      
+// //       if (moodChange !== 0) {
+// //         const user = await User.findById(userId);
+// //         if (user) {
+// //             const currentMood = user.moodValue ?? 80;
+// //             let newMoodValue = Math.max(0, Math.min(100, currentMood + moodChange));
+// //             await User.findByIdAndUpdate(userId, { moodValue: newMoodValue });
+// //         }
+// //       }
+
+// //       res.status(201).json(diary);
+// //     } catch (error) {
+// //       console.error('Save error:', error);
+// //       res.status(500).json({ message: '保存失败', error });
+// //     }
+// //   }
+// // );
+
+// // // 更新日记
+// // router.patch(
+// //   '/:id',
+// //   authenticateToken,
+// //   upload.any(),
+// //   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+// //     try {
+// //       const diary = await Diary.findById(req.params.id);
+// //       if (!diary) {
+// //         res.status(404).json({ message: 'Not found' });
+// //         return;
+// //       }
+
+// //       const requesterId = (req as any).user.userId;
+// //       if (diary.user.toString() !== requesterId) {
+// //           res.status(403).json({ message: '你没有权限编辑这篇日记' });
+// //           return;
+// //       }
+
+// //       const { title, mood, tags } = req.body;
+// //       if (title) diary.title = title;
+// //       if (mood) diary.mood = mood;
+// //       const { content: finalContent, snapshotUrl } = processContentAndFiles(req);
+// //       diary.content = finalContent;
+// //       if (snapshotUrl) {
+// //         if (diary.image?.length) {
+// //           const oldPath = path.join(__dirname, '../../', diary.image[0]);
+// //           if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+// //         }
+// //         diary.image = [snapshotUrl];
+// //       }
+// //       diary.tags = Array.isArray(tags) ? tags : tags ? [tags] : [];
+// //       for (const tagName of diary.tags) {
+// //         if (tagName.trim()) {
+// //           await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+// //         }
+// //       }
+// //       await diary.save();
+// //       res.json(diary);
+// //     } catch (err) {
+// //       console.error('Update error:', err);
+// //       res.status(500).json({ message: '更新失败', error: err });
+// //     }
+// //   }
+// // );
+
+// // 创建日记 (已适配 Vercel Blob)
+// router.post('/', authenticateToken, upload.any(), async (req: Request, res: Response) => {
+//     try {
+//         const { title, mood, tags } = req.body;
+//         const userId = req.user?.userId;
+
+//         if (!userId) {
+//           res.status(403).json({ message: '无法识别用户' })
+//           return 
+//         }
+//         if (!title || title.trim() === '') {
+//           res.status(400).json({ message: '标题不能为空' });
+//           return 
+//         }
+
+//         const uploadedFiles = req.files as Express.Multer.File[] | undefined;
+//         let contentObject: any = req.body.content ? JSON.parse(req.body.content) : {};
+//         let snapshotUrl: string | null = null;
+        
+//         if (uploadedFiles && uploadedFiles.length > 0) {
+//             // 并行上传所有文件到 Vercel Blob
+//             const uploadPromises = uploadedFiles.map(file => 
+//                 put(file.originalname, file.buffer, { access: 'public', addRandomSuffix: true })
+//             );
+//             const blobs = await Promise.all(uploadPromises);
+
+//             // 创建一个从原始字段名到 Vercel Blob 结果的映射
+//             const blobMap = new Map(uploadedFiles.map((file, i) => [file.fieldname, blobs[i]]));
+            
+//             if (blobMap.has('snapshot')) {
+//                 snapshotUrl = blobMap.get('snapshot')!.url;
+//             }
+
+//             // 更新 content JSON 中的文件 URL
+//             if (!contentObject.files) contentObject.files = {};
+//             for (const [fieldname, blob] of blobMap.entries()) {
+//                 if (fieldname !== 'snapshot') {
+//                     // 确保即使 content.files[fieldname] 不存在也能正确赋值
+//                     contentObject.files[fieldname] = { ...(contentObject.files[fieldname] || {}), url: blob.url };
+//                 }
+//             }
+//         }
+        
+//         const finalContent = JSON.stringify(contentObject);
+
+//         const rawTags = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+//         for (const tagName of rawTags) {
+//             if (tagName.trim()) await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+//         }
+
+//         const diary = await Diary.create({ 
+//             title, mood, content: finalContent, tags: rawTags, 
+//             image: snapshotUrl ? [snapshotUrl] : [], user: userId 
+//         });
+
+//         // 更新心情值
+//         const positiveMoods = ['happy', 'excited'];
+//         const negativeMoods = ['sad', 'anxious'];
+//         let moodChange = 0;
+//         if (positiveMoods.includes(mood)) moodChange = 10;
+//         else if (negativeMoods.includes(mood)) moodChange = -10;
+        
+//         if (moodChange !== 0) {
+//             const user = await User.findById(userId);
+//             if (user && typeof user.moodValue === 'number') {
+//                 const newMoodValue = Math.max(0, Math.min(100, user.moodValue + moodChange));
+//                 await User.findByIdAndUpdate(userId, { moodValue: newMoodValue });
+//             }
+//         }
+
+//         res.status(201).json(diary);
+
+//     } catch (error) {
+//         console.error('Save error:', error);
+//         const errorMessage = error instanceof Error ? error.message : '未知错误';
+//         res.status(500).json({ message: '保存失败', error: errorMessage });
+//     }
+// });
+
+// // 更新日记 (已适配 Vercel Blob)
+// router.patch('/:id', authenticateToken, upload.any(), async (req: AuthenticatedRequest, res: Response) => {
+//     try {
+//         const diary = await Diary.findById(req.params.id);
+//         if (!diary) return res.status(404).json({ message: '日记不存在' });
+
+//         const requesterId = req.user?.userId;
+//         if (diary.user.toString() !== requesterId) {
+//             return res.status(403).json({ message: '你没有权限编辑这篇日记' });
+//         }
+        
+//         const uploadedFiles = req.files as Express.Multer.File[] | undefined;
+//         let contentObject: any = req.body.content ? JSON.parse(req.body.content) : JSON.parse(diary.content); // 从请求或旧数据加载
+//         let snapshotUrl: string | null = diary.image && diary.image.length > 0 ? diary.image[0] : null;
+
+//         if (uploadedFiles && uploadedFiles.length > 0) {
+//             const uploadPromises = uploadedFiles.map(file => 
+//                 put(file.originalname, file.buffer, { access: 'public', addRandomSuffix: true })
+//             );
+//             const blobs = await Promise.all(uploadPromises);
+//             const blobMap = new Map(uploadedFiles.map((file, i) => [file.fieldname, blobs[i]]));
+
+//             if (blobMap.has('snapshot')) {
+//                 // 如果有旧的快照，从 Vercel Blob 中删除
+//                 if(snapshotUrl) {
+//                     try { await del(snapshotUrl); } catch (e) { console.error("删除旧快照失败:", e); }
+//                 }
+//                 snapshotUrl = blobMap.get('snapshot')!.url;
+//             }
+            
+//             if (!contentObject.files) contentObject.files = {};
+//             for (const [fieldname, blob] of blobMap.entries()) {
+//                 if (fieldname !== 'snapshot') {
+//                     contentObject.files[fieldname] = { ...(contentObject.files[fieldname] || {}), url: blob.url };
+//                 }
+//             }
+//         }
+        
+//         const { title, mood, tags } = req.body;
+//         diary.title = title || diary.title;
+//         diary.mood = mood || diary.mood;
+//         diary.content = JSON.stringify(contentObject);
+//         diary.image = snapshotUrl ? [snapshotUrl] : [];
+//         diary.tags = Array.isArray(tags) ? tags : (tags ? [tags] : diary.tags);
+
+//         for (const tagName of diary.tags) {
+//             if (tagName.trim()) await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+//         }
+        
+//         await diary.save();
+//         res.json(diary);
+
+//     } catch (error) {
+//         console.error('Update error:', error);
+//         const errorMessage = error instanceof Error ? error.message : '未知错误';
+//         res.status(500).json({ message: '更新失败', error: errorMessage });
+//     }
+// });
+
+// // 获取单个日记
+// router.get(
+//   '/:id',
+//   async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+//     try {
+//       const diary = await Diary.findById(req.params.id);
+//       if (!diary) {
+//         res.status(404).json({ message: 'Diary not found' });
+//         return;
+//       }
+//       res.json(diary);
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ message: '获取日记失败', error: err });
+//     }
+//   }
+// );
+
+// // GET /api/diaries - 获取当前用户的所有日记
+// router.get('/', authenticateToken, async (req: Request, res: Response) => {
+//     try {
+//         const userId = (req as any).user.userId;
+//         const currentUser = await User.findById(userId);
+
+//         if (!currentUser) {
+//             res.status(404).json({ message: '用户不存在' });
+//             return 
+//         }
+
+//         // 确定需要获取哪些用户的日记
+//         const userIdsToFetch = [currentUser._id];
+//         if (currentUser.partner) {
+//             userIdsToFetch.push(currentUser.partner);
+//         }
+
+//         // --- 核心修改：使用 $in 操作符查询 ---
+//         const { mood, tags, search } = req.query;
+//         const filter: any = { user: { $in: userIdsToFetch } };
+
+
+//         if (mood) {
+//             filter.mood = mood as string;
+//         }
+//         if (tags) {
+//           const tagsArray = Array.isArray(tags) ? tags : [tags];
+//           if (tagsArray.length > 0) {
+//             filter.tags = { $in: tagsArray };
+//           }
+//         }
+//         if (search) {
+//             // 使用正则表达式进行模糊搜索，i 表示不区分大小写
+//             filter.title = { $regex: search as string, $options: 'i' };
+//         }
+
+//         // console.log('Sending to MongoDB:', filter); 
+
+//         const diaries = await Diary.find(filter)
+//           .sort({ createdAt: -1 })
+//           .populate('user', 'username color'); 
+        
+//         // const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
+//         res.json(diaries);
+//     } catch (error) {
+//         console.error('Fetch diaries error:', error);
+//         res.status(500).json({ message: '获取日记列表失败', error });
+//     }
+// });
+
+// // 列出标签
+// // router.get(
+// //   '/tags',
+// //   async (_req: Request, res: Response): Promise<void> => {
+// //     try {
+// //       const tags = await Tag.find({}, 'name').sort({ name: 1 });
+// //       res.json(tags.map(t => t.name));
+// //     } catch (error) {
+// //       console.error(error);
+// //       res.status(500).json({ message: '获取标签失败' });
+// //     }
+// //   }
+// // );
+
+// // DELETE /api/diaries/:id - 删除一篇日记 (仅限作者)
+// router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+//     try {
+//         const diaryId = req.params.id;
+//         const requesterId = (req as any).user.userId;
+
+//         const diary = await Diary.findById(diaryId);
+//         if (!diary) {
+//             res.status(404).json({ message: '日记不存在' });
+//             return 
+//         }
+
+//         // --- 核心验证：检查请求者是否为作者 ---
+//         if (diary.user.toString() !== requesterId) {
+//             res.status(403).json({ message: '你没有权限删除这篇日记' });
+//             return 
+//         }
+
+//         await Diary.findByIdAndDelete(diaryId);
+//         res.status(200).json({ message: '日记已成功删除' });
+
+//     } catch (error) {
+//         console.error('删除日记时出错:', error);
+//         res.status(500).json({ message: '删除失败', error });
+//     }
+// });
+
+// export default router;
 // backend/src/routes/diaries.ts
-import express, { Request, Response, RequestHandler } from 'express';
-import Diary from '../models/Diary';
-import jwt from 'jsonwebtoken';
+
+// backend/src/routes/diaries.ts
+
+import express, { Request, Response } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { put, del } from '@vercel/blob';
+import Diary from '../models/Diary';
 import Tag from '../models/Tag';
-import User from '../models/User'; 
-import { Types } from 'mongoose';
+import User from '../models/User';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-env-var';
 
-// 上传目录
-const uploadDir = path.join(__dirname, '../../uploads');
-const contentImgDir = path.join(uploadDir, 'contentImg');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
-if (!fs.existsSync(contentImgDir)) fs.mkdirSync(contentImgDir);
+// const upload = multer({ 
+//   storage: multer.memoryStorage(),
+//   limits: { fileSize: 10 * 1024 * 1024 }
+// });
+const upload = multer({ storage: multer.memoryStorage(), limits: {  fieldSize: 25 * 1024 * 1024, files: 50, fields: 50, fileSize: 100 * 1024 * 1024 } });
 
-// multer 存储配置
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dest = file.fieldname === 'snapshot' ? uploadDir : contentImgDir;
-    if (file.fieldname !== 'snapshot' && !fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
-    cb(null, dest);
-  },
-  filename: (_req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-const upload = multer({ storage, limits: {  fieldSize: 25 * 1024 * 1024, files: 50, fields: 50, fileSize: 100 * 1024 * 1024 } });
+// --- 创建日记 (POST /) ---
+router.post('/', authenticateToken, upload.any(), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+        const { title, mood, tags } = req.body;
+        const userId = req.user?.userId;
 
-// JWT 认证中间件
-const authenticateToken: RequestHandler = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    res.status(401).json({ message: 'No token' });
-    return;
-  }
-  try {
-    const token = authHeader.split(' ')[1];
-    const payload = jwt.verify(token, JWT_SECRET) as { userId: string };
-    (req as any).user = payload;
-    next();
-    return;
-  } catch {
-    res.status(403).json({ message: 'Invalid token' });
-    return;
-  }
-};
+        if (!userId) {
+            res.status(403).json({ message: '无法识别用户' });
+            return;
+        }
+        if (!title || title.trim() === '') {
+            res.status(400).json({ message: '标题不能为空' });
+            return;
+        }
 
-// 处理内容与文件
-const processContentAndFiles = (req: Request): { content: string; snapshotUrl: string | null } => {
-    const { content } = req.body;
-    if (!content) {
-        return { content: JSON.stringify({ elements: [], appState: {}, files: {} }), snapshotUrl: null };
-    }
-
-    const contentObject = JSON.parse(content);
-    const uploadedFiles = req.files as Express.Multer.File[] | undefined;
-    let snapshotUrl: string | null = null;
-
-    if (uploadedFiles) {
-        if (!contentObject.files) contentObject.files = {};
+        const uploadedFiles = req.files as Express.Multer.File[] | undefined;
+        let contentObject: any = req.body.content ? JSON.parse(req.body.content) : {};
+        let snapshotUrl: string | null = null;
         
-        uploadedFiles.forEach(file => {
-            const fileId = file.fieldname;
+        if (uploadedFiles && uploadedFiles.length > 0) {
+            const uploadPromises = uploadedFiles.map(file => 
+                put(file.originalname, file.buffer, { access: 'public', addRandomSuffix: true })
+            );
+            const blobs = await Promise.all(uploadPromises);
+            const blobMap = new Map(uploadedFiles.map((file, i) => [file.fieldname, blobs[i]]));
             
-            // --- 这是最关键的修复 ---
-            // 从文件的绝对路径中，只截取 "uploads" 之后的部分
-            const relativePath = file.path.substring(file.path.indexOf('uploads'));
-            // 将 Windows 的路径分隔符 '\' 替换为 URL 标准的 '/'
-            const url = '/' + relativePath.replace(/\\/g, '/'); 
+            if (blobMap.has('snapshot')) snapshotUrl = blobMap.get('snapshot')!.url;
 
-            if (fileId === 'snapshot') {
-                snapshotUrl = url;
-            } else if (contentObject.files[fileId]) {
-                contentObject.files[fileId].url = url;
-                delete contentObject.files[fileId].dataURL;
+            if (!contentObject.files) contentObject.files = {};
+            for (const [fieldname, blob] of blobMap.entries()) {
+                if (fieldname !== 'snapshot') {
+                    contentObject.files[fieldname] = { ...(contentObject.files[fieldname] || {}), url: blob.url };
+                }
             }
-        });
-    }
-    
-    return {
-        content: JSON.stringify(contentObject),
-        snapshotUrl
-    };
-};
-
-// 创建日记
-router.post(
-  '/',
-  authenticateToken,
-  upload.any(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { title, mood, tags } = req.body;
-      const userId = (req as any).user.userId;
-      if (!title || title.trim() === '') {
-        res.status(400).json({ message: '标题不能为空' });
-        return;
-      }
-      const { content: finalContent, snapshotUrl } = processContentAndFiles(req);
-      const rawTags = Array.isArray(tags) ? tags : tags ? [tags] : [];
-      for (const tagName of rawTags) {
-        if (tagName.trim()) {
-          await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
         }
-      }
-      const diary = await Diary.create({ title, mood, content: finalContent, tags: rawTags, image: snapshotUrl ? [snapshotUrl] : [], user: userId });
-      
-      const positiveMoods = ['happy', 'excited'];
-      const negativeMoods = ['sad', 'anxious'];
-      let moodChange = 0;
-
-      if (positiveMoods.includes(mood)) {
-        moodChange = 10;
-      } else if (negativeMoods.includes(mood)) {
-        moodChange = -10;
-      }
-      
-      if (moodChange !== 0) {
-        const user = await User.findById(userId);
-        if (user) {
-            const currentMood = user.moodValue ?? 80;
-            let newMoodValue = Math.max(0, Math.min(100, currentMood + moodChange));
-            await User.findByIdAndUpdate(userId, { moodValue: newMoodValue });
+        
+        const finalContent = JSON.stringify(contentObject);
+        const rawTags = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+        for (const tagName of rawTags) {
+            if (tagName.trim()) await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
         }
-      }
+        const diary = await Diary.create({ title, mood, content: finalContent, tags: rawTags, image: snapshotUrl ? [snapshotUrl] : [], user: userId });
 
-      res.status(201).json(diary);
+        const positiveMoods = ['happy', 'excited'];
+        const negativeMoods = ['sad', 'anxious'];
+        let moodChange = 0;
+        if (positiveMoods.includes(mood)) moodChange = 10;
+        else if (negativeMoods.includes(mood)) moodChange = -10;
+        if (moodChange !== 0) {
+            const user = await User.findById(userId);
+            if (user && typeof user.moodValue === 'number') {
+                const newMoodValue = Math.max(0, Math.min(100, user.moodValue + moodChange));
+                await User.findByIdAndUpdate(userId, { moodValue: newMoodValue });
+            }
+        }
+
+        res.status(201).json(diary);
     } catch (error) {
-      console.error('Save error:', error);
-      res.status(500).json({ message: '保存失败', error });
+        console.error('Save error:', error);
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
+        res.status(500).json({ message: '保存失败', error: errorMessage });
     }
-  }
-);
+});
 
-// 更新日记
-router.patch(
-  '/:id',
-  authenticateToken,
-  upload.any(),
-  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
+// --- 更新日记 (PATCH /:id) ---
+router.patch('/:id', authenticateToken, upload.any(), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-      const diary = await Diary.findById(req.params.id);
-      if (!diary) {
-        res.status(404).json({ message: 'Not found' });
-        return;
-      }
-
-      const requesterId = (req as any).user.userId;
-      if (diary.user.toString() !== requesterId) {
-          res.status(403).json({ message: '你没有权限编辑这篇日记' });
-          return;
-      }
-
-      const { title, mood, tags } = req.body;
-      if (title) diary.title = title;
-      if (mood) diary.mood = mood;
-      const { content: finalContent, snapshotUrl } = processContentAndFiles(req);
-      diary.content = finalContent;
-      if (snapshotUrl) {
-        if (diary.image?.length) {
-          const oldPath = path.join(__dirname, '../../', diary.image[0]);
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        const diary = await Diary.findById(req.params.id);
+        if (!diary) {
+            res.status(404).json({ message: '日记不存在' });
+            return;
         }
-        diary.image = [snapshotUrl];
-      }
-      diary.tags = Array.isArray(tags) ? tags : tags ? [tags] : [];
-      for (const tagName of diary.tags) {
-        if (tagName.trim()) {
-          await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+
+        const requesterId = req.user?.userId;
+        if (diary.user.toString() !== requesterId) {
+            res.status(403).json({ message: '你没有权限编辑这篇日记' });
+            return;
         }
-      }
-      await diary.save();
-      res.json(diary);
-    } catch (err) {
-      console.error('Update error:', err);
-      res.status(500).json({ message: '更新失败', error: err });
-    }
-  }
-);
+        
+        const uploadedFiles = req.files as Express.Multer.File[] | undefined;
+        let contentObject: any = req.body.content ? JSON.parse(req.body.content) : JSON.parse(diary.content);
+        let snapshotUrl: string | null = diary.image && diary.image.length > 0 ? diary.image[0] : null;
 
-// 获取单个日记
-router.get(
-  '/:id',
-  async (req: Request<{ id: string }>, res: Response): Promise<void> => {
-    try {
-      const diary = await Diary.findById(req.params.id);
-      if (!diary) {
-        res.status(404).json({ message: 'Diary not found' });
-        return;
-      }
-      res.json(diary);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: '获取日记失败', error: err });
-    }
-  }
-);
+        if (uploadedFiles && uploadedFiles.length > 0) {
+            const uploadPromises = uploadedFiles.map(file => 
+                put(file.originalname, file.buffer, { access: 'public', addRandomSuffix: true })
+            );
+            const blobs = await Promise.all(uploadPromises);
+            const blobMap = new Map(uploadedFiles.map((file, i) => [file.fieldname, blobs[i]]));
 
-// GET /api/diaries - 获取当前用户的所有日记
-router.get('/', authenticateToken, async (req: Request, res: Response) => {
+            if (blobMap.has('snapshot')) {
+                if(snapshotUrl) {
+                    try { await del(snapshotUrl); } catch (e) { console.error("删除旧快照失败:", e); }
+                }
+                snapshotUrl = blobMap.get('snapshot')!.url;
+            }
+            if (!contentObject.files) contentObject.files = {};
+            for (const [fieldname, blob] of blobMap.entries()) {
+                if (fieldname !== 'snapshot') {
+                    contentObject.files[fieldname] = { ...(contentObject.files[fieldname] || {}), url: blob.url };
+                }
+            }
+        }
+        
+        const { title, mood, tags } = req.body;
+        diary.title = title || diary.title;
+        diary.mood = mood || diary.mood;
+        diary.content = JSON.stringify(contentObject);
+        diary.image = snapshotUrl ? [snapshotUrl] : [];
+        diary.tags = Array.isArray(tags) ? tags : (tags ? [tags] : diary.tags);
+
+        for (const tagName of diary.tags) {
+            if (tagName.trim()) await Tag.updateOne({ name: tagName }, { $setOnInsert: { name: tagName } }, { upsert: true });
+        }
+        
+        await diary.save();
+        res.json(diary);
+    } catch (error) {
+        console.error('Update error:', error);
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
+        res.status(500).json({ message: '更新失败', error: errorMessage });
+    }
+});
+
+// --- GET /api/diaries (获取日记列表) ---
+router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
-        const userId = (req as any).user.userId;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(403).json({ message: '无法识别用户' });
+            return;
+        }
+        
         const currentUser = await User.findById(userId);
-
         if (!currentUser) {
             res.status(404).json({ message: '用户不存在' });
-            return 
+            return;
         }
 
-        // 确定需要获取哪些用户的日记
         const userIdsToFetch = [currentUser._id];
         if (currentUser.partner) {
             userIdsToFetch.push(currentUser.partner);
         }
-
-        // --- 核心修改：使用 $in 操作符查询 ---
+        
         const { mood, tags, search } = req.query;
         const filter: any = { user: { $in: userIdsToFetch } };
-
-
-        if (mood) {
-            filter.mood = mood as string;
-        }
+        if (mood) filter.mood = mood as string;
         if (tags) {
-          const tagsArray = Array.isArray(tags) ? tags : [tags];
-          if (tagsArray.length > 0) {
-            filter.tags = { $in: tagsArray };
-          }
+            const tagsArray = Array.isArray(tags) ? tags : [tags];
+            if (tagsArray.length > 0) filter.tags = { $in: tagsArray };
         }
-        if (search) {
-            // 使用正则表达式进行模糊搜索，i 表示不区分大小写
-            filter.title = { $regex: search as string, $options: 'i' };
-        }
-
-        // console.log('Sending to MongoDB:', filter); 
-
-        const diaries = await Diary.find(filter)
-          .sort({ createdAt: -1 })
-          .populate('user', 'username color'); 
+        if (search) filter.title = { $regex: search as string, $options: 'i' };
         
-        // const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
+        const diaries = await Diary.find(filter).sort({ createdAt: -1 }).populate('user', 'username color');
         res.json(diaries);
     } catch (error) {
         console.error('Fetch diaries error:', error);
@@ -252,41 +618,49 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     }
 });
 
-// 列出标签
-// router.get(
-//   '/tags',
-//   async (_req: Request, res: Response): Promise<void> => {
-//     try {
-//       const tags = await Tag.find({}, 'name').sort({ name: 1 });
-//       res.json(tags.map(t => t.name));
-//     } catch (error) {
-//       console.error(error);
-//       res.status(500).json({ message: '获取标签失败' });
-//     }
-//   }
-// );
+// --- GET /api/diaries/:id (获取单个日记) ---
+router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+    try {
+        const diary = await Diary.findById(req.params.id);
+        if (!diary) {
+            res.status(404).json({ message: 'Diary not found' });
+            return;
+        }
+        res.json(diary);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: '获取日记失败', error: err });
+    }
+});
 
-// DELETE /api/diaries/:id - 删除一篇日记 (仅限作者)
-router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+// --- DELETE /api/diaries/:id (删除日记) ---
+router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
         const diaryId = req.params.id;
-        const requesterId = (req as any).user.userId;
+        const requesterId = req.user?.userId;
+        
+        if (!requesterId) {
+            res.status(403).json({ message: '无法识别用户' });
+            return;
+        }
 
         const diary = await Diary.findById(diaryId);
         if (!diary) {
             res.status(404).json({ message: '日记不存在' });
-            return 
+            return;
         }
-
-        // --- 核心验证：检查请求者是否为作者 ---
         if (diary.user.toString() !== requesterId) {
             res.status(403).json({ message: '你没有权限删除这篇日记' });
-            return 
+            return;
+        }
+
+        if (diary.image && diary.image.length > 0) {
+            const deletePromises = diary.image.map(url => del(url).catch(e => console.error(`删除云端图片失败: ${url}`, e)));
+            await Promise.all(deletePromises);
         }
 
         await Diary.findByIdAndDelete(diaryId);
         res.status(200).json({ message: '日记已成功删除' });
-
     } catch (error) {
         console.error('删除日记时出错:', error);
         res.status(500).json({ message: '删除失败', error });
