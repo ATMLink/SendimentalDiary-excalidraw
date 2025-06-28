@@ -53,16 +53,9 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: '/pwa-maskable-192x192.png', // 可遮罩图标，用于适应不同形状的图标
-            sizes: '192x192',
+            src: '/apple-touch-icon.png', // 180x180 像素图标，用于 iOS/iPadOS
+            sizes: '180x180',
             type: 'image/png',
-            purpose: 'any maskable',
-          },
-          {
-            src: '/pwa-maskable-512x512.png', // 可遮罩图标
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
           },
         ],
       },
