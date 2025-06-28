@@ -399,7 +399,7 @@ export default function Diaries() {
       
       {/* --- 左侧筛选和控制面板 --- */}
       {/* 核心修改 2: 调整 aside 宽度，并在小屏时可滚动 */}
-      <aside className="w-full md:w-1/4 lg:w-1/5 p-4 sm:p-6 bg-black/20 flex flex-col gap-4 border-r border-zelda-green/30 overflow-y-auto">
+      <aside className="w-full md:w-3/10 lg:w-1/5 p-4 sm:p-6 bg-black/20 flex flex-col gap-4 border-r border-zelda-green/30 overflow-y-auto">
         <div className="flex items-center gap-4">
           {/* 核心修改 3: 增大返回按钮的触控区域 */}
           <button onClick={() => navigate('/')} className="btn-zelda-square p-3 min-w-[48px] min-h-[48px] flex items-center justify-center">
@@ -462,7 +462,7 @@ export default function Diaries() {
 
       {/* --- 右侧日记卡片展示区 --- */}
       {/* 核心修改 8: 调整 main 宽度，使其占据剩余空间 */}
-      <main className="w-full md:w-3/4 lg:w-4/5 h-full overflow-y-auto">
+      <main className="w-full md:w-7/10 lg:w-4/5 h-full overflow-y-auto">
         {renderContent()}
       </main>
     </div>
