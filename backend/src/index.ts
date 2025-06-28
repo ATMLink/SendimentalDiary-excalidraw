@@ -75,8 +75,7 @@ const app = express();
 // 允许来自你 Vercel 前端域名和本地开发环境的请求
 // 请将 'YOUR_FRONTEND_URL' 替换为你的 Vercel 前端项目的实际域名
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'https://YOUR_FRONTEND_URL.vercel.app' // 例如: 'https://diary-app.vercel.app'
+  'https://sendimental-diary-app.vercel.app' // 例如: 'https://diary-app.vercel.app'
 ];
 
 app.use(cors({
