@@ -2,7 +2,8 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000/api', // 根据你的后端地址调整
+  // baseURL: 'http://localhost:3000/api', // 根据你的后端地址调整
+  baseURL: 'https://sendimental-diary-backend.vercel.app/api',
 })
 
 // 请求拦截：自动带上 token
