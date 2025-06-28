@@ -1,67 +1,84 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa'; // 导入 VitePWA
+import Unocss from 'unocss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    Unocss(), // UnoCSS 插件应该在 VitePWA 之前，确保其样式被正确处理
     // 配置 VitePWA 插件
     VitePWA({
-      registerType: 'autoUpdate', // 自动更新 Service Worker
-      injectRegister: 'auto',    // 自动注入注册代码
+      registerType: 'autoUpdate',
+      injectRegister: 'auto',
       workbox: {
-        // Workbox 配置，用于控制 Service Worker 的缓存行为
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}'], // 缓存这些类型的文件
-        // 确保在开发模式下不缓存 index.html，避免开发时的缓存问题
-        // 在生产环境中，Workbox 会自动处理 index.html 的缓存
+        // 修正 globPatterns 的路径，确保它指向 dist 目录内的文件
+        // Vercel 的构建路径是 /vercel/path0/app/dist
+        globDirectory: 'dist', // 确保 globDirectory 指向构建输出目录
+        globPatterns: [
+            '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}',
+            // 如果你的 UnoCSS 样式是单独的 CSS 文件，也需要包含
+            // 例如：'assets/uno.css' 或 'uno.css'
+        ],
+        // globIgnores 保持不变
+        globIgnores: [
+          '**/node_modules/**/*',
+          'sw.js',
+          'workbox-*.js'
+        ],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst', // API 请求优先使用网络，如果离线则使用缓存
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 缓存 7 天
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
             },
           },
         ],
       },
       manifest: {
-        // PWA Manifest 文件配置，定义应用的外观和行为
-        name: 'Sendimental Diary', // 应用名称
-        short_name: 'Diary',      // 短名称，显示在主屏幕上
-        description: '记录心情和日记的应用程序', // 应用描述
-        theme_color: '#ffffff',   // 主题颜色，影响浏览器地址栏颜色
-        background_color: '#ffffff', // 背景颜色
-        display: 'standalone',    // 显示模式：standalone 会隐藏浏览器UI
-        scope: '/',               // PWA 的作用域，通常是根路径
-        start_url: '/',           // PWA 的起始URL
+        name: 'Sendimental Diary',
+        short_name: 'Diary',
+        description: '记录心情和日记的应用程序',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
         icons: [
-          // 应用图标配置
-          // 请确保这些图片文件存在于 public 文件夹中
           {
-            src: '/pwa-192x192.png', // 192x192 像素图标
+            src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/pwa-512x512.png', // 512x512 像素图标
+            src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
           {
-            src: '/apple-touch-icon.png', // 180x180 像素图标，用于 iOS/iPadOS
+            src: '/apple-touch-icon.png',
             sizes: '180x180',
             type: 'image/png',
           },
         ],
       },
       devOptions: {
-        enabled: true, // 在开发模式下启用 PWA，方便调试
+        enabled: true,
       },
     }),
   ],
+  // 保留您原有的 define 配置
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+  },
+  // 移除 server.proxy 配置，因为它在生产环境中不再需要
+  // 新增 build 配置，禁用 CSS 代码分割
+  build: {
+    cssCodeSplit: false, // 禁用 CSS 代码分割，尝试解决 UnoCSS 导入问题
+  },
 });
