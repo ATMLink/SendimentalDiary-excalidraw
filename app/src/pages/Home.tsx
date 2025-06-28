@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import useUserStore from '../store/user';
+import MoodWidget from '../components/mood/MoodWidget';
 
 const Home: React.FC = () => {
   const { user, logout } = useUserStore();
@@ -17,7 +18,10 @@ const Home: React.FC = () => {
   };
 
   return (
-    <div className="page-sheikah flex flex-col items-center justify-center text-white">
+    <div className="page-sheikah flex flex-col items-center justify-center text-white relative">
+      <div className="absolute top-8 right-8 z-10">
+        <MoodWidget />
+      </div>
       <div className="p-8 container-zelda-apple-lite rounded-xl w-full max-w-md text-center">
         <h1 className="text-3xl font-bold mb-4 text-zeldaYellow">Welcome, {user.username}</h1>
         <p className="mb-2">Email: {user.email || 'N/A'}</p>

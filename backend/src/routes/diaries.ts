@@ -110,6 +110,26 @@ router.post(
         }
       }
       const diary = await Diary.create({ title, mood, content: finalContent, tags: rawTags, image: snapshotUrl ? [snapshotUrl] : [], user: userId });
+      
+      const positiveMoods = ['happy', 'excited'];
+      const negativeMoods = ['sad', 'anxious'];
+      let moodChange = 0;
+
+      if (positiveMoods.includes(mood)) {
+        moodChange = 10;
+      } else if (negativeMoods.includes(mood)) {
+        moodChange = -10;
+      }
+      
+      if (moodChange !== 0) {
+        const user = await User.findById(userId);
+        if (user) {
+            const currentMood = user.moodValue ?? 80;
+            let newMoodValue = Math.max(0, Math.min(100, currentMood + moodChange));
+            await User.findByIdAndUpdate(userId, { moodValue: newMoodValue });
+        }
+      }
+
       res.status(201).json(diary);
     } catch (error) {
       console.error('Save error:', error);

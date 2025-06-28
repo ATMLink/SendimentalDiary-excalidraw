@@ -7,6 +7,7 @@ import authRouter from './routes/auth'
 import diariesRouter from './routes/diaries'
 import tagsRoutes from './routes/tags'
 import wishesRouter from './routes/wishes'
+import moodsRouter from './routes/moods';
 
 const app = express()
 app.use(cors({
@@ -47,6 +48,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/diaries', diariesRouter)
 app.use('/api/tags', tagsRoutes)
 app.use('/api/wishes', wishesRouter)
+app.use('/api/moods', moodsRouter);
 // ... 其他路由
 
 app.listen(3000, () => {

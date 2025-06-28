@@ -9,14 +9,14 @@ import { useQuery } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 
 function AuthLoader({ children }: { children: React.ReactNode }) {
-  const { user, setUser, logout } = useUserStore();
+  const {  setUser, logout } = useUserStore();
   const navigate = useNavigate();
 
   // --- 关键修复 1: 移除 onSuccess/onError, 改为从 useQuery 返回值中获取状态 ---
   const { isLoading, data: fetchedUser, isError } = useQuery<User>({
     queryKey: ['me'],
     queryFn: fetchMeApi,
-    enabled: !!localStorage.getItem('token') && !user._id,
+    enabled: !!localStorage.getItem('token'),
     retry: false, // 失败后不重试
   });
 

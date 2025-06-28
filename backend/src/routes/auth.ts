@@ -36,7 +36,8 @@ router.post('/login', async (req: Request, res: Response) => {
             id: user._id,
             username: user.username,
             email: user.email ?? '',
-            color: user.color ?? ''
+            color: user.color ?? '',
+            moodValue: user.moodValue
         }
      })
   } catch (error) {
@@ -51,7 +52,9 @@ router.get('/me', async (req: Request, res: Response) => {
   const token = authHeader.split(' ')[1]
   try {
     const payload = jwt.verify(token, JWT_SECRET) as { userId: string }
-    const user = await User.findById(payload.userId).select('-password')
+    const user = await User.findById(payload.userId)
+      .select('-password')
+      .populate('partner', 'username color moodValue');
     if (!user) { res.status(404).json({ message: 'User not found' }); return }
     res.json(user)
   } catch (error) {
