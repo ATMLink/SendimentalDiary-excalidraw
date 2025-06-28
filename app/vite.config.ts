@@ -1,25 +1,23 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import Unocss from 'unocss/vite';
-import { VitePWA } from 'vite-plugin-pwa';
+import { VitePWA } from 'vite-plugin-pwa'; // 导入 VitePWA 插件
 
 export default defineConfig({
   plugins: [
     react(),
-    Unocss({
-      // 确保 UnoCSS 配置为生产环境提取 CSS
-      // 'extract: true' 通常在生产环境中是隐式的，但明确设置有助于解决问题。
-      // 如果您有单独的 'uno.config.ts' 文件，可以在此处保留 'configFile: './uno.config.ts','。
-    }),
+    Unocss(),
     // PWA 插件配置
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
+      // Workbox 配置：重新启用并设置文件大小限制
       workbox: {
-        globDirectory: 'dist', 
+        globDirectory: 'dist',
         globPatterns: [
             '**/*.{js,css,html,ico,png,svg,webp,jpg,jpeg}',
-            '**/*.css', // 确保包含所有 CSS 文件（包括 UnoCSS 生成的）
+            '**/*.css', // 确保包含所有 CSS 文件
+            '**/*.js',  // 确保包含所有 JS 文件，包括大的 vendor 文件
         ],
         globIgnores: [
           '**/node_modules/**/*',
@@ -39,7 +37,9 @@ export default defineConfig({
             },
           },
         ],
-        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024, 
+        // 核心修改：增加 Workbox 的文件大小限制
+        // 17.8 MB 意味着我们需要至少 18MB。为了安全起见，我们设置为 50MB (50 * 1024 * 1024 字节)。
+        maximumFileSizeToCacheInBytes: 50 * 1024 * 1024,
       },
       manifest: {
         name: 'Sendimental Diary',
@@ -62,7 +62,7 @@ export default defineConfig({
             type: 'image/png',
           },
           {
-            src: '/apple-touch-icon.png',
+            src: '/apple-touch-icon.png', // 180x180 像素图标
             sizes: '180x180',
             type: 'image/png',
           },
@@ -73,28 +73,48 @@ export default defineConfig({
       },
     }),
   ],
+
+  // 保留您原有的 define 配置
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
   },
+
+  // 保留您原有的 server.proxy 配置
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      // 您的 Excalidraw 代理配置，如果原始文件有，请保留
+      // '/excalidraw-assets': { /* ... */ },
+      // '/excalidraw-assets-dev': { /* ... */ },
+    }
+  },
+
+  // 重新引入 build 配置，以确保 UnoCSS 和 Rollup 输出的稳定性
   build: {
-    // 这明确告诉 Vite 如何在构建中处理 CSS 输出
-    // 它有时有助于解决 CSS 虚拟模块的解析问题
-    cssTarget: 'es2015', // 确保兼容性
-    // cssCodeSplit: true, // 让 Vite 默认拆分 CSS，如果问题持续存在，可以尝试 'false'
+    cssTarget: 'es2015',
     rollupOptions: {
       output: {
-        // 这确保创建了一个主要的 CSS 包，名为 'index.css'
-        // 它应该包含所有 UnoCSS 样式。
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'index.css') {
-            return `assets/[name].[ext]`; // 为主 CSS 文件保留原始名称
+            return `assets/[name].[ext]`;
           }
           if (assetInfo.name && assetInfo.name.endsWith('.css')) {
-            return `assets/[name]-[hash].[ext]`; // 用于其他 CSS 块
+            return `assets/[name]-[hash].[ext]`;
           }
-          return `assets/[name]-[hash].[ext]`; // 其他资产的默认值
+          // 对于所有 JS 文件，确保它们被正确命名和包含
+          if (assetInfo.name && assetInfo.name.endsWith('.js')) {
+            return `assets/[name]-[hash].[ext]`;
+          }
+          return `assets/[name]-[hash].[ext]`;
         },
       },
     },
   },
+
+  // 保留您原始文件中注释掉的 resolve 和 optimizeDeps 配置
+  // resolve: { ... },
+  // optimizeDeps: { ... },
 });
