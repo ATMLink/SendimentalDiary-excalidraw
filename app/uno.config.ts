@@ -80,6 +80,20 @@ import {
         after:(content-empty absolute inset-0 -z-1 bg-zeldaYellow rounded-full transform -translate-x-full rotate-6 transition-transform duration-200)
         hover:after:(translate-x-0)`,
 
+        'btn-zelda-apple-danger': `
+        relative inline-block
+        font-semibold font-orbitron text-lg leading-snug tracking-tight
+        px-5 py-2 rounded-full border
+        border-red-700 bg-red-700 text-zeldaGold
+        hover:bg-red-600 hover:text-zeldaGold
+        transition-all duration-200 ease-in-out
+        will-change-transform transform hover:scale-105
+        overflow-hidden whitespace-nowrap
+        min-w-24 text-center
+        backdrop-blur-md bg-opacity-80
+        after:(content-empty absolute inset-0 -z-1 bg-red-600 rounded-full transform -translate-x-full rotate-6 transition-transform duration-200)
+        hover:after:(translate-x-0)`,
+
         'input-zelda-apple': `
           w-full max-w-600
           font-orbitron text-base text-zeldaGold placeholder-zeldaGold
@@ -123,7 +137,7 @@ import {
 
         'select-zelda-apple': `
           appearance-none
-          font-orbitron text-base text-zeldaGold test-center
+          font-orbitron text-base text-zeldaGold text-center
           bg-zeldaGreen border border-zeldaGreen rounded-full
           p-3 pr-8 shadow-inner shadow-zeldaGreen
           backdrop-blur-md bg-opacity-80

@@ -63,3 +63,9 @@ export const getDiaries = async (params: GetDiariesParams = {}): Promise<Diary[]
  const { data } = await api.get(`/diaries?${searchParams.toString()}`);
  return data;
 };
+
+// 删除日记
+export const deleteDiaryApi = async (id: string) => {
+  const { data } = await api.delete(`/diaries/${id}`);
+  return data;
+};

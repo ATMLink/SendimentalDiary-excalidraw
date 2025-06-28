@@ -6,6 +6,8 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import Tag from '../models/Tag';
+import User from '../models/User'; 
+import { Types } from 'mongoose';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'replace-with-env-var';
@@ -128,6 +130,13 @@ router.patch(
         res.status(404).json({ message: 'Not found' });
         return;
       }
+
+      const requesterId = (req as any).user.userId;
+      if (diary.user.toString() !== requesterId) {
+          res.status(403).json({ message: '你没有权限编辑这篇日记' });
+          return;
+      }
+
       const { title, mood, tags } = req.body;
       if (title) diary.title = title;
       if (mood) diary.mood = mood;
@@ -177,8 +186,23 @@ router.get(
 router.get('/', authenticateToken, async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user.userId;
+        const currentUser = await User.findById(userId);
+
+        if (!currentUser) {
+            res.status(404).json({ message: '用户不存在' });
+            return 
+        }
+
+        // 确定需要获取哪些用户的日记
+        const userIdsToFetch = [currentUser._id];
+        if (currentUser.partner) {
+            userIdsToFetch.push(currentUser.partner);
+        }
+
+        // --- 核心修改：使用 $in 操作符查询 ---
         const { mood, tags, search } = req.query;
-        const filter: any = { user: userId };
+        const filter: any = { user: { $in: userIdsToFetch } };
+
 
         if (mood) {
             filter.mood = mood as string;
@@ -196,7 +220,9 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 
         // console.log('Sending to MongoDB:', filter); 
 
-        const diaries = await Diary.find(filter).sort({ createdAt: -1 }); // 按创建时间倒序
+        const diaries = await Diary.find(filter)
+          .sort({ createdAt: -1 })
+          .populate('user', 'username color'); 
         
         // const diaries = await Diary.find({ user: userId }).sort({ createdAt: -1 }); // 按创建时间倒序
         res.json(diaries);
@@ -219,5 +245,32 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 //     }
 //   }
 // );
+
+// DELETE /api/diaries/:id - 删除一篇日记 (仅限作者)
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+    try {
+        const diaryId = req.params.id;
+        const requesterId = (req as any).user.userId;
+
+        const diary = await Diary.findById(diaryId);
+        if (!diary) {
+            res.status(404).json({ message: '日记不存在' });
+            return 
+        }
+
+        // --- 核心验证：检查请求者是否为作者 ---
+        if (diary.user.toString() !== requesterId) {
+            res.status(403).json({ message: '你没有权限删除这篇日记' });
+            return 
+        }
+
+        await Diary.findByIdAndDelete(diaryId);
+        res.status(200).json({ message: '日记已成功删除' });
+
+    } catch (error) {
+        console.error('删除日记时出错:', error);
+        res.status(500).json({ message: '删除失败', error });
+    }
+});
 
 export default router;

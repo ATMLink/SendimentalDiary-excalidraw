@@ -9,13 +9,23 @@ import { getTags } from '../api/tags';
 import type { Diary } from '../types/diary';
 
 // 卡片组件保持不变
-const DiaryCard = ({ diary, navigate }: { diary: Diary; navigate: (path: string) => void }) => {
+const DiaryCard = ({ diary, navigate }: { diary: Diary; navigate: (path:string) => void }) => {
   const coverImage = diary.image && diary.image.length > 0 
     ? `http://localhost:3000${diary.image[0]}` 
     : '/tears-of-kingdom.png';
 
+  // 1. 定义一个内联样式，用于将用户的颜色传递给 CSS
+  const cardStyle = {
+    '--user-color': diary.user.color || '#3e6c4e' // 提供一个默认颜色以防万一
+  } as React.CSSProperties;
+
   return (
-    <div onClick={() => navigate(`/diary/${diary._id}`)} className="block group w-full h-full">
+    // 2. 在根元素上应用内联样式和新的包裹类名
+    <div 
+      onClick={() => navigate(`/diary/${diary._id}`)} 
+      className="block group w-full h-full diary-card-wrapper"
+      style={cardStyle}
+    >
       <div className="diary-card h-full flex flex-col">
         <img 
           src={coverImage} 
@@ -23,21 +33,24 @@ const DiaryCard = ({ diary, navigate }: { diary: Diary; navigate: (path: string)
           className="w-full h-48 object-cover flex-shrink-0"
         />
         <div className="p-4 flex-grow flex flex-col">
-          <h2 className="font-semibold text-lg truncate text-zelda-gold">{diary.title}</h2>
-          <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          {/* 心情 */}
-          <p className="text-zelda-gold/70 capitalize">{diary.mood}</p>
-
-          {/* 标签列表 */}
-          {diary.tags && diary.tags.length > 0 && diary.tags.map(tag => (
-            <span 
-              key={tag} 
-              className="bg-zelda-green/60 text-zelda-gold/90 px-2 py-0.5 rounded-full text-xs font-semibold"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
+          <h2 className="font-semibold text-lg truncate text-zeldaGold">{diary.title}</h2>
+          
+          {/* 3. 新增：显示作者信息，并使用 var(--user-color) 来动态设置文字颜色 */}
+          <p className="text-sm mt-1 text-[var(--user-color)] opacity-80 font-orbitron">
+             {diary.user.username} 的回忆
+          </p>
+          
+          <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-sm pt-2">
+            <p className="text-zelda-gold/70 capitalize">{diary.mood}</p>
+            {diary.tags && diary.tags.length > 0 && diary.tags.map(tag => (
+              <span 
+                key={tag} 
+                className="bg-zelda-green/60 text-zelda-gold/90 px-2 py-0.5 rounded-full text-xs font-semibold"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

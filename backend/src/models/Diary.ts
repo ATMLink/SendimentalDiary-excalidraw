@@ -8,6 +8,8 @@ export interface IDiary {
   image?: string[]
   tags: string[]
   user: Types.ObjectId
+  status: 'active' | 'pending_deletion';
+  deletionRequestedBy?: Types.ObjectId | null;
 }
 
 const diarySchema = new Schema<IDiary>({
@@ -16,7 +18,9 @@ const diarySchema = new Schema<IDiary>({
   content: { type: String, default: '' },
   image: { type: [String], default: [] },
   tags: { type: [String], default: [] },
-  user: { type: Schema.Types.ObjectId, ref: 'User', required: true }
+  user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  status: { type: String, enum: ['active', 'pending_deletion'], default: 'active' },
+  deletionRequestedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true })
 
 export default model<IDiary>('Diary', diarySchema)

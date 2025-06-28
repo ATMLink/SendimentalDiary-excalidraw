@@ -17,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // 如果 zustand 中没有用户信息，并且 localStorage 中也没有 token，
   // 则认为用户未登录
-  if (!user && !token) {
+  if (!user._id && !token) {
     // 使用 Navigate 组件进行重定向
     // - to="/login": 指定重定向的目标路径
     // - replace: 表示替换历史记录，这样用户点击浏览器后退按钮时不会回到被保护的页面

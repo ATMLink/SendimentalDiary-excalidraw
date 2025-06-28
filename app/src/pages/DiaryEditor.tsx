@@ -77,6 +77,16 @@ export default function DiaryEdit() {
         [user._id, user.username]
     );
 
+    useEffect(() => {
+        // 这个 effect 只在新建日记时 (即没有 paramId) 运行一次
+        if (!paramId && !title) { // 加上 !title 判断防止覆盖已有的编辑内容
+            const now = new Date();
+            const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            setTitle(`${formattedDate} 的回忆`);
+            markDirty(); // 将其标记为“已修改”，以便自动保存或返回时保存
+        }
+    }, [paramId, title]);
+
     // load diary
     useEffect(() => {
         if (!paramId) return;
@@ -232,15 +242,30 @@ const buildFormData = useCallback(async () => {
         }
     }, [title, buildFormData, saveDiary, handleSuccessfulSave]);
 
+    // --- 2. 核心修改：重写返回按钮的逻辑 ---
     const handleBack = async () => {
-        if (!dirtyRef.current || !title.trim()) {
-            navigate('/diaries');
+        // 第一步：检查标题是否为空
+        if (!title.trim()) {
+            toast.error('请先为这份回忆起一个标题吧！');
+            return; // 标题为空，直接阻止任何操作
+        }
+
+        // 第二步：检查是否有未保存的更改
+        if (!dirtyRef.current) {
+            navigate('/diaries'); // 没有更改，直接返回
             return;
         }
+
+        // 第三步：有更改，则执行保存
+        // toast('正在保存日记...', { icon: '💾' });
         const result = await handleSave();
         if (result.success) {
+            // 保存成功后，给一个短暂的成功提示，然后返回
+            // toast.success('已保存！');
             navigate('/diaries');
         }
+        // 如果保存失败(result.success 为 false)，则停留在当前页
+        // handleSave 内部已经弹出了错误提示，所以这里不用再弹
     };
 
     // 自动保存
